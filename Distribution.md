@@ -62,7 +62,7 @@ Docker守护进程可以直接与主操作系统进行通信，为各个Docker�
 
 通过Namespace来进行隔离，Cgroups进行资源限制，Capability进行权限限制
 
-#### 1. Namespace隔离
+### 1. Namespace隔离
 
 （1) **Mount Namespaces**
 
@@ -97,7 +97,7 @@ PID Namespaces 可以嵌套，形成树状结构，每个 namespace 只能看到
 
 在不同的user namespace中，同样一个用户的user ID 和group ID可以不一样，换句话说，一个用户可以在父user namespace中是普通用户，在子user namespace中是超级用户。
 
-#### 2. Linux Cgroup
+### 2. Linux Cgroup
 
 Linux Cgroup 可为系统中所运行任务（进程）的用户定义组群分配资源 — 比如 CPU 时间、系统内存、网络带宽或者这些资源的组合。可以监控管理员配置的 cgroup，拒绝 cgroup 访问某些资源，甚至在运行的系统中动态配置 cgroup。所以，可以将 controll groups 理解为 controller （system resource） （for） （process）groups，也就是是说它以一组进程为目标进行系统资源分配和控制。
 
@@ -121,6 +121,11 @@ Linux Cgroup 可为系统中所运行任务（进程）的用户定义组群分�
 
 - 限制访问某些设备（通过设置设备的白名单）
 
+### 3. Linux Capability
+
+参考1: https://blog.csdn.net/snipercai/article/details/79273678
+
+从Linux内核2.2版本开始，Linux支持把超级用户不同单元的权限分离，可以单独的开启和禁止，即capability的概念。可以将capability赋给普通的进程，使其可以做root用户可以做的事情。内核在验证进程是否具有某项权限时，不再验证该进程的是特权进程(有效用户ID为0)和非特权进程(有效用户ID非0)，而是验证该进程是否具有其进行该操作的capability。不合理的禁止capability，会导致应用崩溃。目前Docker默认启用一个严格capability限制权限，同时支持开发者通过命令行来改变其默认设置，保障可用性的同时又可以确保其安全。
 
 
 
