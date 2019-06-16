@@ -99,9 +99,70 @@
 
 
 
+### Linux 启动流程
+- **BIOS （Basic Input/Output System executes MBR）**
+
+（1）开机，CPU查看ROM，通过JUMP命令启动BIOS。
+
+（2）BIOS列出所有可用的启动设备（比如硬盘，U盘等）。
+
+（3）通常从硬盘启动，硬盘包含MBR。
+
+- **MBR（Master Boot Record executes GRUB）**
+
+（1）硬盘中最初的512字节。
+
+（2）最初的434～446字节包含primary boot loader。
+
+（3）64字节分区表（partitio table）。
+
+（4）6字节验证时间戳（validation timestamp）。
+
+（5）启动GRUB
+
+- **GRUB（GRand Unified Boot Loader executes Kernel）**
+
+（1）根据/boot/grub/grub.conf文件，载入文件系统和其驱动。
+
+（2）载入/boot下的内核文件。
+
+- **Kernel（Kernel executes /sbin/init）**
+
+（1）运行init进程。
+
+- **Init Process（Init Process executes runlevel programs）**
+
+（1）读取配置文件/etc/inittab。
+
+（2）设置系统的运行级别（runlevel）。
+
+（3）启动一些开启启动的程序（如daemon）。
+
+- **Runlevel（Runlevel programs are executed from /etc/rc.d/rc*.d）**
+
+0 - halt，系统停机状态。
+
+1 - Single user mode，单用户工作状态，root权限，用于系统维护，禁止远程登录。
+
+2 - Multiuser，多用户状态（无NFS）。
+
+3 - Full multiuser mode，完全多用户状态（有NFS），登录后进入控制台命令行模式。
+
+4 - unused，系统未使用，保留。
+
+5 - X11，X11控制台，登陆后进入图形GUI模式。
+
+6 - reboot，系统正常关闭并重启。
+
 
 
 ### Linux fork函数
+
+Linux 实现进程的原理，分两个步骤：
+
+（1) 在内存中复制父进程，得到子进程，此时子进程就是父进程上下文的简单克隆，内容完全一致。
+
+（2) 设置子进程PID，PPID等和父进程不一样的内容。
 
 
 ### Linux 分页机制
