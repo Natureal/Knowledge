@@ -141,7 +141,7 @@ const double *const pb = &b; // 指向双精度常量b的常量指针
 
 白话：顶层const更加关注自身，顶级重要！
 
-他们的作用：（参考：https://blog.csdn.net/qq_19528953/article/details/50922303）
+他们的作用：（参考：https://blog.csdn.net/qq_19528953/article/details/50922303 ）
 
 为啥非要区分顶层const和底层const呢，根据C++primer的解释，区分后有两个作用。
 
