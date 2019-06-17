@@ -76,6 +76,13 @@ Notice：静态存储区：在内存空间中
 
 如果想在多个文件之间共享const对象，必须在变量的定义和声明之前加extern关键字。
 
+- **const 和类型的前后顺序可变**
+
+```
+const int i = 0;
+int const j = 1;
+```
+
 - **对const引用时，引用的类型必须与其所引用的对象一致**
 
 ```
@@ -128,7 +135,35 @@ const double *const pb = &b; // 指向双精度常量b的常量指针
 
 - **顶层const和底层const（top-level const and low-level const）**
 
-顶层const是指指针本身是否是常量，底层const是指指针指向的对象是否是常量。
+对于指针：顶层const是指指针本身是否是常量，底层const是指指针指向的对象是否是常量。
+
+对于变量：只有顶层const，比如 const int ci = 0;
+
+白话：顶层const更加关注自身，顶级重要！
+
+他们的作用：（参考：https://blog.csdn.net/qq_19528953/article/details/50922303）
+
+为啥非要区分顶层const和底层const呢，根据C++primer的解释，区分后有两个作用。
+
+1. 执行对象拷贝时有限制，常量的底层const不能赋值给非常量的底层const。也就是说，你只要能正确区分顶层const和底层const，你就能避免这样的赋值错误。下面举一个例子：
+
+```
+int num_c = 3;
+const int *p_c = &num_c;  //p_c为底层const的指针
+//int *p_d = p_c;  //错误，不能将底层const指针赋值给非底层const指针
+const int *p_d = p_c; //正确，可以将底层const指针复制给底层const指针
+```
+
+2. 使用命名的强制类型转换函数const_cast时，需要能够分辨底层const和顶层const，因为const_cast只能改变运算对象的底层const。下面举一个例子：
+
+```
+int num_e = 4;
+const int *p_e = &num_e;
+//*p_e = 5;  //错误，不能改变底层const指针指向的内容
+int *p_f = const_cast<int *>(p_e);  //正确，const_cast可以改变运算对象的底层const。但是使用时一定要知道num_e不是const的类型。
+*p_f = 5;  //正确，非顶层const指针可以改变指向的内容
+cout << num_e;  //输出5
+```
 
 - **constexpr和常量表达式**
 
@@ -141,3 +176,64 @@ constexpr int mf = 20; // 20是常量表达式
 constexpr int limit = mf + 1; // mf + 1 是常量表达式
 constexpr int sz = size(); // 当 size 为 constexpr 函数时，这行正确
 ```
+
+- **指针和constexpr**
+
+1. constexpr指针的初始值必须是nullptr，0或者某个存储于固定地址中的对象（一般是定义于函数体外的对象）。
+2. constexpr只对指针本身有效，与指针所指向的对象无关。
+
+```
+const int *p = nullptr; // p 是一个指向常数类型的指针。
+constexpr int *q = nullptr; // q 是一个指向整数的常量指针，constexpr把指针对象设置为顶层const。
+
+```
+
+- **类型别名与const**
+
+1. C++11中可以用 using 代替 typedef
+
+```
+using SI = Sales_item;
+SI item;
+// 等价于 typedef Sales_item SI;
+```
+
+2. typedef 与 *
+
+```
+typedef char *pstring; // pstring 是 char* 指针
+const pstring cstr = 0; // cstr 是 char* 常量指针
+char *const dstr = 0; // 该行与上行有一样的效果
+
+const char *estr = 0; // const char* 的指针，指向常量字符
+```
+
+## Q：auto 类型说明符
+
+- **auto 类型在初始化时，会忽略掉顶层const**
+```
+const int ci = 0;
+auto b = ci; // b 为 int 类型（省略了顶层const）
+const auto cb = ci; // cb 为 const int 类型
+auto c = &ci; // c 为指向整形常量的指针（保留了底层const）
+```
+
+但是！auto在碰到引用时，初始值中的顶层const属性仍然保留。
+
+```
+auto &g = ci; // g 是一个整形常量引用
+auto &h = 42; // 报错，不能为非常量引用绑定到字面值（常量表达式）
+const auto &j = 42; // 正确
+```
+
+一条语句定义多个变量：
+
+```
+// & 和 * 从属于某个声明符，auto 指的是基本数据类型
+auto k = ci, &l = i; // k 是整形，l 是整形引用。
+```
+
+
+## Q：free 底层实现
+
+## Q：引用的底层实现
