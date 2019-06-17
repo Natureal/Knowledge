@@ -208,7 +208,7 @@ char *const dstr = 0; // 该行与上行有一样的效果
 const char *estr = 0; // const char* 的指针，指向常量字符
 ```
 
-## Q：auto 类型说明符
+## Q：auto 类型说明符（C++11）
 
 - **auto 类型在初始化时，会忽略掉顶层const**
 ```
@@ -233,7 +233,119 @@ const auto &j = 42; // 正确
 auto k = ci, &l = i; // k 是整形，l 是整形引用。
 ```
 
+## Q：左值与右值
+
+左值：指那些求值结果作为对象或函数的表达式。
+
+右值：（一般而言）指那些结果是值的表达式。
+
+summary：当一个对象被用作右值的时候，用的是对象的值（内容）；当对象被用作左值的时候，用的是对象的身份（在内存中的位置）
+
+1. 赋值运算符左侧为左值，得到的结果也仍然是一个左值。
+
+2. 取地址符作用于一个左值对象，返回一个指向该运算对象的指针（为右值）。
+
+3. 解引用运算符*，下标运算符[]的求值结果都是左值。
+
+4. 对于 decltype，如果表达式的结果是左值，decltype得到一个引用类型。
+
+
+## Q：decltype（C++11）
+
+从表达式推断出要定义的变量的类型，但不想用该表达式的值。
+
+decltype（declared type）：C++11引入的第二种类型说明符，能返回操作数的数据类型。
+
+```
+decltype(f()) sum = x; // sum 的类型就是函数 f 的返回类型
+const int ci = 0, &cj = ci;
+decltype(ci) x = 0; // x: const int
+decltype(cj) y = x; // y: const int&
+decltype(cj) z; // 错误，z是一个引用，必须初始化
+
+// decltype 的结果可以是引用类型
+int i = 42, *p = &i, &r = i;
+decltype(r + 0) b; // 正确，加法结果是左值，int，所以 b 也是 int 类型
+decltype(*p) c; // 错误，*p 返回左值，所以 c 是 int& 类型，必须初始化
+decltype((i)) d; // 错误，(i) 作为表达式，是左值，所以 d 是 int& 类型，必须初始化
+decltype(i) e; // 正确，i 在这作为右值，所以 d 是 int 类型
+decltype(r) f = i; // 正确，f 为 int& 类型，只有在 decltype 中，引用不是作为所指对象的同义词
+```
+
+## Q：无符号，有符号数混合运算
+
+有符号数会先转换为无符号数，再进行相应的算术运算。
+
+string::size_type 为无符号数，因此如果在一条表达式中已经有了 size() 函数，就不要再用 int 了，这样可以避免混用 int 和 unsigned int 可能带来的问题，比如：
+
+s.size() < n // n 为负值 int，比如 -1，在表达式中 n 会被自动转换为一个巨大的无符号整数。
+
+
+## Q：C++11 列表初始化
+
+```
+vector<string> articles = {"a", "an", "the"}; // 正确的列表初始化
+vector<string> v1("a"); // 错误，不能用字符串字面量构建 vector 对象
+vector<int> ivec(10, -1); // 初始化 10 个 int 类型的 -1
+vector<string> svec(10, "hi"); // 初始化 10 个 string 类型的 hi
+
+long double ld = 3.1415926;
+int a{ld}, b = {ld}; // 错误：列表初始化不执行类型转换，存在丢失信息的风险
+int c(ld), d = ld; // 正确，默认赋值会执行类型转换
+```
+
+## Q：迭代器
+
+```
+vector<int>::iterator it1;
+string::iterator it2;
+
+vector<int>::const_iterator it3; // it3 只能读取元素，不能修改元素
+string::const_iterator it4; // it4 同理
+```
+
+C++11 引入 cbegin() 和 cend()，用来获取 const_iterator：
+
+```
+auto it = v.cbegin(); // it 为 vector<int>::const_iterator
+```
+
+Notice：任何一种可能改变 vector 对象容器的操作，比如添加元素 push_back，都会使该 vector 对象的迭代器失效。不仅仅是 vector，这条规则对任何容器都适用。
+
+## Q：begin 和 end 函数（C++11引入的标准库函数）
+
+```
+int ia[] = {0, 1, 2, 3, 4, 5};
+int *beg = begin(ia); // 指向首元素的指针
+int *last = end(ia); // 指向尾元素的下一位置的指针，但该指针不能执行解引用或递增操作
+```
+
+## Q：C++11 遍历数组方式
+
+```
+int ia[3][4];
+// p 指向含有 4 个整数的数组，等价于 int (*p)[4] = ia;
+for(auto p = ia; p != ia + 3; ++p){
+  // q 指向 4 个整数数组的首元素，也就是 q 指向一个整数
+  for(auto q = *p; q != *p + 4; ++q){
+    cout << *q << ' ';
+  }
+  cout << endl;
+}
+
+```
+
 
 ## Q：free 底层实现
 
 ## Q：引用的底层实现
+
+## Q：指针和引用的区别
+
+参考：https://www.cnblogs.com/heyonggang/p/3250194.html
+
+指针和引用的区别？
+
+(1)引用在创建时必须初始化，指针可以不初始化，引用不可以为NULL指针可以。
+(2)不存在指向空值的引用，但是存在指向空值的指针。
+(3)引用初始化后不能被改变，指针可以改变所指的对象.
