@@ -174,7 +174,7 @@ C++11新规定：允许将变量声明为constexpr类型，以便编译器检查
 ```
 constexpr int mf = 20; // 20是常量表达式
 constexpr int limit = mf + 1; // mf + 1 是常量表达式
-constexpr int sz = size(); // 当 size 为 constexpr 函数时，这行正确
+constexpr int sz = size(); // 当 size 为 constexpr 函constexpr数时，这行正确
 ```
 
 - **指针和constexpr**
@@ -186,7 +186,26 @@ constexpr int sz = size(); // 当 size 为 constexpr 函数时，这行正确
 const int *p = nullptr; // p 是一个指向常数类型的指针。
 constexpr int *q = nullptr; // q 是一个指向整数的常量指针，constexpr把指针对象设置为顶层const。
 
+（类似 int *const q = nullptr）
+
 ```
+
+- **constexpr 函数**
+
+指能用于常量表达式的函数。要求：函数的返回值以及所有形参都得是字面值类型，并有且只有一条 return 语句。编译时，编译器会用相应的结果值替换对 constexpr 函数的调用。为了能在编译过程中随时展开，constexpr 函数被隐式地指定为内联函数。
+
+例外：我们其实会允许 constexpr 函数的返回值并非一个常量。但这不应被用。
+
+```
+constexpr int new_sz(){ return 42; }
+constexpr size_t scale(size_t cnt){ return new_sz() * cnt }
+int arr[scale(2)]; // 正确
+int i = 2;
+int a1 = scale(i); // 返回值是一个非常量表达式（不确定该行是否有错）
+int a2[scale(i)]; // 错误，无法用非常量表达式初始化一个数组
+```
+
+
 
 - **类型别名与const**
 
@@ -196,6 +215,10 @@ constexpr int *q = nullptr; // q 是一个指向整数的常量指针，constexp
 using SI = Sales_item;
 SI item;
 // 等价于 typedef Sales_item SI;
+
+using int_array = int[4];
+typedef int int_array[4]; // 等价的 typedef
+
 ```
 
 2. typedef 与 *
@@ -207,6 +230,8 @@ char *const dstr = 0; // 该行与上行有一样的效果
 
 const char *estr = 0; // const char* 的指针，指向常量字符
 ```
+
+
 
 ## Q：auto 类型说明符（C++11）
 
@@ -232,6 +257,29 @@ const auto &j = 42; // 正确
 // & 和 * 从属于某个声明符，auto 指的是基本数据类型
 auto k = ci, &l = i; // k 是整形，l 是整形引用。
 ```
+
+- **用 auto 简化 for 循环：**
+
+```
+vector<int> v = {0, 1, 2, 3, 4, 5};
+
+for(auto &r : v){
+  r *= 2;
+}
+
+// 与上述等价的传统写法
+for(vector<int>::iterator beg = v.begin(), end = v.end(); beg != end; ++beg){
+  vector<int>::iterator &r = *beg;
+  r *= 2;
+}
+
+// 半简化
+for(auto beg = v.begin(), end = v.end(); beg != end; ++beg){
+  auto &r = *beg;
+  r *= 2;
+}
+```
+
 
 ## Q：左值与右值
 
@@ -281,7 +329,62 @@ string::size_type 为无符号数，因此如果在一条表达式中已经有�
 s.size() < n // n 为负值 int，比如 -1，在表达式中 n 会被自动转换为一个巨大的无符号整数。
 
 
-## Q：C++11 列表初始化
+## Q：函数返回值
+
+- **main 函数返回值**
+
+int main 在没有写 return 时，编译器将隐式地插入一条 return 0;
+
+除了 0 之外：
+
+```
+#include <cstdlib>
+
+int main(){
+  if(some_failure)
+    return EXIT_FAILURE; // 定义在 cstdlib 头文件中
+  else
+    return EXIT_SUCCESS;
+}
+```
+
+- **返回指针的函数**
+
+普通方式：
+```
+// type (*function(parameter_list))[dimension]
+int (*func(int i))[10]; // func 外面的括号必须有，否则将返回指针的数组
+// 理解：
+// func(int i) 没有疑问
+// (*func(int i)) 表示我们可以对函数的返回结果执行解引用操作
+// (*func(int i))[10] 表示解引用返回值后，将得到一个大小为 10 的数组
+// int (*func(int i))[10] 表示解引用完的数组是 int 类型
+```
+
+别名方式：
+```
+typedef int arrT[10]; // 声明 arrT 是一个含有 10 个整数的数组
+using arrT = int[10]; // 与上行等价，C++11
+
+arrT *func(int i); // func 返回一个指向 10 个整数的数组的指针
+```
+
+More advanced 方式：（骚气地运用 auto）
+```
+// 尾置返回类型(trailing return type)，对于复杂函数很有用!
+auto func(int i) -> int (*)[10];
+```
+
+奇怪的方式：（运用 decltype）
+```
+int odd[] = {1,2,3,4};
+decltype(odd) *arrPtr(int i){
+  return &odd;
+}
+```
+
+
+## Q：列表初始化 (C++11)
 
 ```
 vector<string> articles = {"a", "an", "the"}; // 正确的列表初始化
@@ -292,6 +395,27 @@ vector<string> svec(10, "hi"); // 初始化 10 个 string 类型的 hi
 long double ld = 3.1415926;
 int a{ld}, b = {ld}; // 错误：列表初始化不执行类型转换，存在丢失信息的风险
 int c(ld), d = ld; // 正确，默认赋值会执行类型转换
+```
+
+- **列表也可作为赋值语句的右侧运算对象：**
+
+```
+vector<int> vi; // 初始化为空
+vi = {0, 1, 2, 3, 4, 5};
+```
+
+- **列表也可以作为函数的返回值**
+
+```
+vector<string> process(){
+  if(...){
+    return {}; // 空 vector 对象
+  }
+  else if(...){
+    return {"function", "okay"}; //  返回列表初始化的 vector 对象
+  }
+  ...
+}
 ```
 
 ## Q：迭代器
@@ -335,10 +459,263 @@ for(auto p = ia; p != ia + 3; ++p){
 
 ```
 
+## Q：initializer_list 形参（C++11）
+
+如果函数的实参数量未知，但是全部实参的类型都相同，可以用 initializer_list。
+
+```
+initializer_list<T> lst{a, b, c, ...}; // lst 中的元素是对应初始值的副本，列表中的元素是 const 类型
+
+lst2 = lst; // 因此拷贝或赋值是浅拷贝，共享元素
+
+lst.size();
+lst.begin();
+lst.end();
+```
+
+- **one more thing**
+
+省略符形参是为了便于C++程序访问某些特殊的C代码而设置的，用了varargs的C标准库功能。
+
+通常省略符形参不用于其他目的。且总在形参列表的最后一个位置。
+
+```
+void foo(parm_list, ...); // 对于前面定义的形参的实参会执行正常的类型检查，省略符形参对应的实参无须类型检查
+
+void foo(...);
+```
+
+## Q：C++11 运算符
+
+1. 取余
+
+取余 % 操作的运算对象必须是整数类型。
+
+m 总是与 (m/n)*n+m%n 相同。
+
+C++11中，取余运算中，如果 m%n 不等于 0，则它的符号和 m 相同。
+
+2. 除法
+
+C++11 新标准中规定：商无论正负都是向 0 取整（即：直接切除小数部分）。
+
+除法运算中，如果两个运算对象的符号相同则为正，否则为负。
+
+3. sizeof 运算符
+
+重点：sizeof 并不实际计算其运算对象的值，因此无效指针，解引用无效指针都没事。sizeof 不需要计算也能知道他们的类型。
+
+sizeof (X)，计算类型/对象的 size。
+
+sizeof expr，计算表达式/对象的 size，返回的是结果类型的大小。
+
+```
+class_a data, *p;
+sizeof(class_a);
+sizeof data;
+sizeof p;
+sizeof *p; // p 所指类型的空间大小
+
+sizeof class_a::revenue; // C++11新规定：可以用作用域运算符来获取类成员
+```
+
+1. 对引用类型执行 sizeof，得到被引用对象所占空间的大小。
+
+2. 对指针执行 sizeof，得到指针本身所占空间的大小。
+
+3. 对数组执行 sizeof，得到整个数组所占空间的大小。
+
+```
+// 获取数组 ia 的元素数量
+constexpr size_t sz = sizeof(ia) / sizeof(*ia);
+
+// sizeof 返回的是一个常量表达式，可以用来初始化数组的维度
+int arr2[sz];
+```
+
+4. 对 string/vector 对象执行 sizeof，只会返回该类型固定部分的大小，不会计算对象中的元素占用了多少空间。
+
+
+## Q：内联函数
+
+将函数指定为内联函数（inline），即在函数前面加上 inline 修饰符，通常就是将它在每个调用点上“内联地”展开，即把函数内容替换到调用处，消除了调用开销。
+
+当然，内联符号只是向编译器发出一个请求，编译器可以选择忽略这个请求。
+
+用法：内联机制用于优化规模较小、流程直接、频繁调用的函数。
+
+PS：很多编译器都不支持内联递归函数！
+
+## Q：=default（C++11）
+
+对于类的构造函数，我们可以用如下的方式将其定义为默认构造函数：
+
+```
+struct Sales_data{
+  Sales_data() = default; // 定义在类内则是内联的，在类外则是非内联的
+  Sales_data( ... ){
+    ...
+  }
+  ...
+};
+```
+
+## Q：class 和 struct 的区别
+
+使用class和struct定义类的唯一区别就是默认的访问权限。
+
+1. 在 struct 中，定义在第一个访问权限说明符之前的成员是 public 的。
+2. 在 class 中，定义在第一个访问权限说明符之前的成员是 private 的。
+
+因此，当希望定义的类的所有成员都是 public 时，可以用 struct。
+
+## Q：友元函数
+
+使得类可以允许其他类或者函数访问它的非共有（private）成员。
+
+```
+class Sales_data{
+  // 为 Sales_data 的非成员函数做友元声明，友元声明只能在类的内部，最好是开头/结尾
+  friend std::istream &read(std::istream&, Sales_data&);
+  firend std::ostream &print(std::ostream&, const Sales_data&);
+
+private:
+    std::string bookNo;
+    unsigned units_sold = 0;
+    double revenue = 0.0;
+};
+// 在类外声明该友元函数，有些编译器并未强制，但最好加
+std::istream &read(std::istream&, Sales_data&);
+std::ostream &print(std::ostream&, const Sales_data&);
+```
+
+## Q：构造函数深入讨论
+
+- **学会用构造函数初始值列表：一种更高效的初始化方式**
+
+下面是一种构造函数的写法，但是效率并不是最好。因为如果没有在构造函数初始值列表中显式地初始化成员，则该成员将在构造函数之前执行默认初始化，然后才会在函数内被赋值。
+```
+Sales_data::Sales_data(const string &s, unsigned cnt, double price){
+  bookNo = s;
+  units_sold = cnt;
+  revenue = cnt * price;
+}
+```
+
+因此，有的时候我们必须用构造函数初始值列表来初始化成员。比如：成员是 const 或者引用的时候，只有一次机会进行初始化，还有类似的，如果成员的是类，且该类类型没有定义默认构造函数时。
+```
+class ConstRef{
+public:
+  ConstRef(int ii);
+private:
+  int i;
+  const int ci;
+  int &ri;
+}
+// 必须如下初始化
+ConstRef::ConstRef(int ii): i(ii), ci(ii), ri(i) {}
+```
+
+Notice：构造函数初始值列表中的初始值的前后顺序不会影响实际的初始化顺序。实际顺序是它们在类定义中的顺序。
+
+Notice：如果一个构造函数的所有参数都提供了默认实参，则它实际上也定义了默认构造函数。
+
+
+- **委托构造函数**
+
+```
+class Sales_data{
+public:
+  // 非委托
+  Sales_data(std::string s, unsigned cnt, double price):
+        bookNo(s), units_sold(cnt), revenue(cnt * price) {}
+  // 其余构造函数都是委托
+  Sales_data(): Sales_data("", 0, 0) {}
+  Sales_data(std::string s): Sales_data(s, 0, 0) {}
+  Sales_data(std::istream &is): Sales_data() {read(is, *this); }
+}
+```
+
+- **转换构造函数（隐式的类类型转换）**
+
+通过一个实参调用的构造函数，定义一条从构造函数的参数类型到类类型的隐式转换规则。（这种转变只支持一步）
+
+```
+string null_book = "9-99999-99";
+item.combine(null_book); // 用一个string实参自动创建了一个Sales_data的临时对象
+Sales_data item2 = null_book; // 拷贝初始化时也可以隐式转换
+```
+
+
+Notice：可以抑制隐式转换，在构造函数前声明为 explicit，只对一个实参的构造函数有效，而且只能在类内中用。需要多个实参的构造函数默认不能用于执行隐式转换。
+```
+explicit Sales_data(std::istream&); // 显式构造函数
+```
+且，explicit构造函数只能用于直接初始化，不能拷贝初始化。
+
+- **constexpr 构造函数**
+
+一般的构造函数不能是 const 的，但是字面值常量类的构造函数可以是 constexpr 函数。
+
+字面值常量类：
+
+1. 所有数据成员都必须是字面值类型
+
+2. 类必须含有一个 constexpr 构造函数
+
+3. 使用默认的析构函数
+
+4. 类内初始值是常量表达式
+
+## Q：文件流 fstream
+
+```
+// file1 都被截断，即清空内容，但不删除文件
+ofstream out("file1"); // 隐含以 out 模式打开并截断
+ofstream out2("file1", ofstream::out); // 隐含截断
+ofstream out3("file1", ofstream::out | ofstream::trunc);
+// 为了保留文件内容，我们必须显式指定 app 模式
+ofstream app("file2", ofstream::app); // 隐含输出模式
+ofstream app2("file2", ofstream::out | ofstream::app);
+
+// 保留被 ofstream 打开的文件中已有的数据的唯一方法是显式指定 app 或 in 模式
+```
+
+
+## Q：静态成员的类内初始化
+
+```
+class Account{
+public:
+  ...
+
+private:
+  static constexpr int period = 30; // 此时，静态成员必须是字面值常量类型的 constexpr
+
+}
+```
+
+## Q：顺序容器
+
+1. string 和 vector 将元素保存在连续的内存空间中，所以访问很快，在中间位置插入/删除很慢。
+
+2. list 和 forward_list 的设计目的是在任何位置的插入和删除都很快，代价是不支持随机访问，只能遍历。且额外内存开销也比较大
+
+3. deque 支持快速随机访问，在中间位置插入/删除开销大，但在两端很快。
+
+4. forward_list 的设计目的是与最好的手写单向链表达到相当的性能。
+
+
+## Q：新标准库的性能
 
 ## Q：free 底层实现
 
+
+
+## Q：构造函数/析构函数可以是虚函数吗
+
 ## Q：引用的底层实现
+
 
 ## Q：指针和引用的区别
 
