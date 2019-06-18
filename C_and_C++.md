@@ -418,6 +418,18 @@ vector<string> process(){
 }
 ```
 
+- **列表初始化容器**
+
+```
+// 隐含指定了容器的大小
+list<string> authors = {"Milton", "Shakespeare", "Austen"};
+vector<const char*> articles = {"a", "an", "the"};
+// 还能用迭代器进行初始化
+forward_list<string> words(articles.begin(), articles.end());
+
+```
+
+
 ## Q：迭代器
 
 ```
@@ -432,6 +444,9 @@ C++11 引入 cbegin() 和 cend()，用来获取 const_iterator：
 
 ```
 auto it = v.cbegin(); // it 为 vector<int>::const_iterator
+// 还有另一种：逆序迭代器
+auto rit = v.crbegin();
+auto rit2 = v.crend();
 ```
 
 Notice：任何一种可能改变 vector 对象容器的操作，比如添加元素 push_back，都会使该 vector 对象的迭代器失效。不仅仅是 vector，这条规则对任何容器都适用。
@@ -704,6 +719,223 @@ private:
 3. deque 支持快速随机访问，在中间位置插入/删除开销大，但在两端很快。
 
 4. forward_list 的设计目的是与最好的手写单向链表达到相当的性能。
+
+5. array
+
+```
+// 初始化需要类型和元素数量
+array<int, 42> a1;
+array<int, 10> a2 = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+array<int, 10> a3 = {42}; // a3[0] 为 42，其余元素为 0
+// 可以直接拷贝
+array<int, 10> a4 = a2; // 要求元素类型和大小均一样
+```
+
+- **向顺序容器添加元素**
+
+除了array之外，所有标准库容器都提供灵活的内存管理（动态）。
+
+```
+//
+// forward_list 有自己专门的 insert, emplace
+//
+c.push_back(t);
+c.emplace_back(arg);
+c.push_front(t);
+c.emplace_front(arg);
+c.insert(p, t); // 在迭代器 p 所指向的元素之前插入元素，返回新添加元素的迭代器
+c.emplace(p, arg);
+//
+c.insert(p, n, t); // 插入 n 个 t 元素，返回新添加的第一个元素的迭代器
+c.insert(p, b, e); // 将迭代器 b 和 e 指定范围内的元素插入，返回第一个新元素迭代器
+c.insert(p, il); // 将列表插入 ...
+```
+
+Notice：向一个vector,string,deque中插入元素会使得所有指向容器的迭代器，引用和指针失效。
+
+- **C++11 引入了三个新成员：emplace_front, emplace, emplace_back**
+
+```
+// 调用 emplace_back 时，会在容器管理的内存空间中直接创建对象
+c.emplace_back("978-0590353402", 25， 15.99);
+// 而调用 push_back 则会创建一个局部临时对象，并将其压入容器中
+c.push_back(Sales_data("978-0590353402", 25， 15.99));
+```
+
+- **访问容器元素**
+
+访问成员函数返回的是引用（包括 front, back, [], at）。
+```
+c.front();
+c.back();
+c[n];
+c.at(n);
+```
+
+- **删除容器元素**
+
+```
+// forward_list 有自己专门的 erase
+//
+c.pop_back();
+c.pop_front();
+c.erase(p); // 删除迭代器 p 所指定的元素
+c.erase(b, e); // 删除迭代器 b 到 e 范围内的元素，返回最后被删的后面的迭代器，如果 e 本身就是尾，则返回尾迭代器
+c.clear(); // 删除 c 中所有元素
+```
+
+- **vector的扩容**
+
+因为 vector 元素内存连续，因此如果在原位置扩容失败，会分配新的内存空间来保存已有元素和新元素，将已有元素从旧位置移动过来。
+
+vector 扩容时会分配一些预留空间，一般的策略是倍增。
+
+```
+// shrink_to_fit 只适用于 vector, string, deque
+// capacity, reverse 只适用于 vector, string
+c.shrink_to_fit(); // 将 capacity 减少到 size()，但也并不保证
+c.capacity(); // 不重新分配内存的话，c 能保存多少个元素
+c.reverse(n); // 分配至少能容纳 n 个元素的内存空间，reverse 不会减小 capacity
+```
+
+- **string的额外操作**
+
+```
+string s(cp, n); // s 拷贝了 cp 数组的前 n 个字符
+string s(s2, pos2); // s 拷贝了 s2 从下标 pos2 开始到结尾的字符
+string s(s2, pos2, len2); // s 拷贝了 s2 从下标 pos2 开始长度为 len2 的字符，最多拷贝到结尾
+//
+s.substr(pos, n); // 返回一个 string，包含 s 从下标 pos 开始的长度为 n 的字符的拷贝。
+s.substr(pos); // n 的默认值为 0，所以拷贝到结尾
+//
+s.erase(s.size() - 5, 5); // 删除 s 最后 5 个字符
+//
+const char *cp = "Stately, plump Buck";
+s.assign(cp, 7); // s == "Stately"
+s.insert(s.size(), cp + 7); // 插入从 cp + 7 开始到结尾的字符
+s.insert(0, s2, 0, s2.size()); // 在 s[0] 之前插入 s2[0] 开始的 s2.size() 个字符
+//
+s.append("haha"); // 在结尾插入
+s.replace(11, 3, "5th"); // 从下标 11 开始，删除 3 个元素，并插入 5th
+```
+
+string 的搜索函数
+```
+string name("AnnaBelle");
+// find 函数是最简单的搜索，找到第一个匹配位置的下标
+auto pos1 = name.find("Anna"); // pos1 == 0
+//
+string numbers("0123456789"), name("r2d2");
+auto pos = name.find_first_of(numbers); // 查找与给定字符串中任何一个字符匹配的位置
+// 类似的还有
+auto pos1 = name.find_first_not_of(numbers);
+// 家族：
+s.find_first_of(args);
+s.find_last_of(args);
+s.find_first_not_of(args);
+s.find_last_not_of(args);
+s.rfind(); // 逆向搜索
+
+// args 可以指定开始位置
+s.find(s, pos); // 从 pos 开始找
+s.find(s, pos, n); // 从 pos 开始找前 n 个字符
+
+```
+string 的 compare 函数
+
+```
+// 类似 C 中的 strcmp
+s.compare(pos1, n1, s2, pos2, n2);
+```
+
+## Q：Lambda 表达式
+
+表示一个可调用的代码单元，可以看成一个未命名的内联函数。
+
+格式：[capture list] (parameter_list) -> return type {function body}
+
+可以省略为：[capture list] {function body}
+
+Notice1：lambda 不接受默认参数
+
+Notice2：捕获列表只用于局部非 static 变量，lambda 可以直接使用局部 static 变量和它所在函数之外声明的名字（如 cout）。
+
+```
+// 此处忽略了返回类型，lambda 将根据返回值推断出返回类型，如果没有 return，则为 void
+auto f = [] { return 42; };
+```
+
+```
+// 按长度排序，长度相同的单词维持字典序
+stable_sort(words.begin(), words.end(),
+            [](const string &a, const string &b)
+              { return a.size() < b.size(); });
+```
+
+```
+// 捕获局部变量
+[sz](const string &a)
+    { return a.size() >= sz; }
+//
+// 可以用 bind 来重写
+bool check_size(const string &s, string::size_type sz){
+  return s.size() >= sz;
+}
+auto wc = find_if(words.begin(), words.end(),
+                  bind(check_size, _1, sz));
+```
+
+```
+// 自定子 find_if，找到第一个 size() >= sz 的元素的迭代器
+auto wc = find_if(words.begin(), words.end(),
+                [sz](const string &a)
+                    { return a.size() >= sz; });
+```
+
+Notice：当以引用方式捕获一个变量时，必须保证在 lambda 执行时变量是存在的。
+
+- 隐式捕获（C++是全世界最棒的语言！！），不能同时使用隐式值捕获和隐式引用捕获
+```
+// os 显式引用捕获，c 隐式值捕获
+for_each(words.begin(), words.end(),
+        [=, &os](const string &s) { os << s << c; });
+```
+
+- 可变 Lambda
+
+```
+auto f = [v1]() mutable { return ++v1; }; // 可以改变局部变量 v1 的值
+auto f = [&v1] { return ++v1; } // 用引用也可以改变
+```
+
+- 当lambda函数体内包含不止一个return语句时，编译器就不能推断其返回类型
+
+```
+// 此时必须指定返回类型
+auto f = [](int i) -> int {if(i < 0) return -i; else return i; };
+```
+
+
+## Q：bind 函数（C++11）
+
+可以绑定函数，实现嵌套
+
+```
+auto g = bind(f, a, b, _2, c, _1);
+
+// 调用 g
+g(x, y);
+// 映射为
+f(a, b, y, c, x);
+```
+
+bind 使用引用，必须使用标准库 ref 函数来返回一个对象，包含给定的引用，类似的还有 cref（针对 const）
+
+ref 定义在头文件 functional 中
+```
+for_each(words.begin(), words.end(),
+          bind(print, ref(os), _1, ' '));
+```
 
 
 ## Q：新标准库的性能
