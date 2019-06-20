@@ -265,6 +265,88 @@ void f3(destination &d /* 其他参数 */){
 
 <font color=red>但是在使用内置指针时，如果在 new 之后，delete 之前发生了异常，内存不会被释放。</font>
 
+## Q：shared_ptr 实现
+
+参考1： https://blog.csdn.net/u013611405/article/details/88047741
+
+```
+#include <string>
+#include <iostream>
+using namespace std;
+
+template <typename T>
+class Shared_ptr{
+public:
+  // 空参构造函数
+  Shared_ptr(): count(nullptr), ptr((T*)nullptr) {}
+  // 构造函数，count 必须是 new 出来的
+  Shared_ptr(T* p): count(new int(1)), ptr(p) {}
+  // 拷贝构造函数，引用计数加一
+  Shared_ptr(Shared_ptr<T>& copy): count(&(++ *copy.count)), ptr(copy.ptr) {}
+  // 重载 * 和 -> 运算符来模拟指针
+  T& operator * () { return *ptr; }
+  T* operator -> () { return ptr; }
+  // 重载 = 运算符，拷贝赋值运算符
+  // 注意原来的 Shared_ptr 有指对象的话要将其引用计数减一，并判断是否需要 delete
+  // 最后对新的对象的引用计数加一
+  Shared_ptr<T>& operator = (shared_ptr<T>& copy){
+    // 这是一种处理自赋值的方法
+    if(this == &copy)
+      return *this;
+
+    // ！！！
+    // 为了处理自赋值，必须先递增右侧的引用计数器
+    ++ *copy.count;
+
+    if(this->ptr && 0 == -- *this->count){
+      delete count;
+      delete ptr;
+      cout << "deleted ptr" << endl;
+    }
+
+    this->ptr = copy.ptr;
+    this->count = copy.count;
+
+    return *this;
+  }
+  // 析构函数，引用计数减一，并判断是否需要 delete
+  ~Shared_ptr(){
+    if(ptr && 0 == -- *count){
+      delete count;
+      delete ptr;
+      cout << "deleted ptr" << endl;
+    }
+  }
+  int use_count() { return *count; }
+
+private:
+  int *count; // the number of reference(s)
+  T* ptr;
+}
+```
+
+## Q：C++ 3/5法则
+
+如果一个类需要自定义析构函数，几乎可以肯定它也需要自定义拷贝构造函数和拷贝赋值运算符（考虑动态空间）。
+
+如果一个类需要自定义拷贝构造函数，几乎可以肯定需要自定义拷贝赋值运算符，反之亦然。
+
+但是需要自定义拷贝构造函数/拷贝赋值运算符，并不意味着一定需要自定义析构函数。
+
+**RULE**
+所有5个拷贝控制应该被看作一个整体，定义了任何一个就应该定义全部5个操作。
+
+## Q：拷贝并交换（copy and swap）
+
+这种写法是自赋值安全且异常安全的！
+```
+HasPtr& HasPtr::operator = (HasPtr copy){
+  swap(*this, copy); // copy 现在指向本对象曾经使用的内存
+  return *this; // copy 被销毁
+}
+```
+
+
 ## Q：allocator 类
 
 它帮助我们将内存分配和对象构造分离开来，它分配的内存是原始的，未构造的。头文件：memory
@@ -289,7 +371,7 @@ alloc.construct(q++, "hi");
 **使用算法拷贝和填充未初始化的内存**
 
 ```
-uninitialized_copy(b, e, b2); // 迭代器 b 到 e 范围内的元素拷贝到 b2 指定的原始内存中，必须足够大
+uninitialized_copy(b, e, b2); // 迭代器 b 到 e 范围内的元素拷贝到 b2 指定的原始内存中，必须足够大，返回一个指向最后一个元素后一个位置的指针
 uninitialized_copy_n(b, n, b2); // 拷贝 n 个元素
 uninitialized_fill(b, e, t); // 在 b 到 e 的原始内存范围内创建值均为 t 的拷贝
 uninitialized_fill_n(b, n, t); // 创建 n 个对象
@@ -303,8 +385,197 @@ uninitialized_fill_n(q, vi.size(), 42); // 将剩余的元素初始化为42
 
 ```
 
-## Q：移动构造函数
+## Q：vector 的实现
 
+```
+template<typename T>
+class Vec{
+public:
+  Vec(): elements(nullptr), first_free(nullptr), cap(nullptr) {}
+  // 拷贝构造函数
+  Vec(const Vec<T>&);
+  // 拷贝赋值运算符
+  Vec<T>& operator = (const Vec<T>&);
+  // 析构函数
+  ~Vec();
+  // 移动构造函数
+  Vec(Vec<T>&&) noexcept; // 需要指定 noexcept，否则编译器不用移动构造
+  // 移动赋值运算符
+  Vec<T>& operator = (Vec<T>&&) noexcept;
+  void push_back(const T&);
+  size_t size() const { return first_free - elements; }
+  size_t capacity() const { return cap - elements; }
+  T* begin() const { return elements; }
+  T* end() const { return first_free; }
+  // ...
+
+private:
+  Static std::allocator<T> alloc;
+  // 被添加元素的函数所使用
+  void chk_n_alloc(){
+    if(size() == capacity())
+      reallocate();
+  }
+  // 工具函数
+  std::pair<T*, T*> alloc_n_copy(const T*, const T*);
+
+  void free(); // 销毁元素并释放内存
+  void reallocate(); // 获取更多内存并拷贝已有元素
+  T* elements; // 指向首元素的指针
+  T* first_free; // 指向第一个空间元素的指针
+  T* cap; // 指向尾巴后一个位置的指针
+}
+
+template<typename T>
+void
+Vec::push_back(const T& s){
+  chk_n_alloc(); // 确保有空间
+  alloc.construct(first_free++, s);
+}
+
+template<typename T>
+pair<T*, T*>
+Vec::alloc_n_copy(const T* b, const T* e){
+  auto data = alloc.allocate(e - b);
+  // 列表初始化 pair
+  // 将迭代器 b 到 e 范围内的元素拷贝到 data 开始的原始内存中
+  return {data, uninitialized_copy(b, e, data)};
+}
+
+template<typename T>
+void
+Vec::free(){
+  // 逆序销毁所有元素
+  if(elements){
+    for(auto p = first_free; p != elements; ){
+      alloc.destroy(--p); // 删除 p 之前的一个元素，优美！
+    }
+    alloc.deallocate(elements, cap - elements); // 段释放
+  }
+}
+
+// 拷贝构造函数
+template<typename T>
+Vec::Vec(const Vec<T>& s){
+  auto newdata = alloc_n_copy(s.begin(), s.end());
+  elements = newdata.first;
+  first_free = cap = newdata.second;
+}
+
+// 析构函数
+template<typename T>
+Vec::~Vec(){
+  free();
+}
+
+// 拷贝赋值运算符
+template<typename T>
+Vec<T>&
+Vec::operator = (const Vec<T>& copy){
+  // 首先调用 alloc_n_copy，申请一段新的空间
+  auto data = alloc_n_copy(copy.begin(), copy.end());
+  free(); // 释放原先的空间
+  // 指向新的空间
+  elements = data.first;
+  first_free = cap = data.second;
+  return *this; // 返回自己
+}
+
+// reallocate 使用了 C++11 新定义的 std::move
+// 头文件 utility
+// 直接调用 std::move 而不用 using，以避免潜在的名字冲突
+template<typename T>
+void
+Vec::reallocate(){
+  auto newcapacity = size() ? 2 : size() : 1;
+  // 分配新内存
+  auto newdata = alloc.allocate(newcapacity);
+  // 将数据从旧内存移动到新内存
+  auto new_elements = newdata; // 新内存
+  auto old_elements = elements; // 旧内存
+  for(size_t i = 0; i != size(); ++i)
+    alloc.constrcut(new_elements++, std::move(*old_elements++));
+  free(); // 移动完成，释放旧内存空间
+  // 更新指针
+  elements = newdata;
+  first_free = new_elements;
+  cap = elements + newcapacity;
+}
+
+// 移动构造函数
+template<typename T>
+Vec::Vec(Vec<T>&& s) noexcept // 移动操作不应抛出任何异常，C++11
+  // 接管内存
+  :elements(s.elements), first_free(s.first_free), cap(s.cap)
+{
+  // 令 s 进入一个状态：对其运行析构函数是安全的
+  // 不会析构掉 elements
+  s.elements = s.first_free = s.cap = nullptr;
+}
+
+// 移动赋值运算符，要正确处理自赋值
+template<typename T>
+Vec<T>&
+Vec::operator = (Vec<T>&& copy) noexcept{
+  // 检测自赋值
+  if(this != &copy){
+    free();
+    elements = copy.elements;
+    first_free = copy.first_free;
+    cap = copy.cap;
+    // 将 copy 置为可析构状态
+    copy.elements = copy.first_free = copy.cap = nullptr;
+  }
+  return *this;s
+}
+
+```
+
+## Q：移动
+
+法则：在移动操作后，移后源对象必须保持有效的，可析构的状态，但是用户不能对其值进行任何假设。
+
+- **移动构造函数**
+
+使用移动构造函数，所管理的内存将不会被拷贝，而是直接接管内存的所有权。（移交管理权）
+
+合成规则：
+
+rule1：如果类定义了一个移动构造函数和移动赋值运算符，则该类的合成拷贝构造函数和合成拷贝赋值运算符会被定义为删除的。
+
+rule2：如果类定义了自己的拷贝构造函数，拷贝赋值运算符或者析构函数，编译器就不会为它合成移动构造函数和移动赋值运算符了。
+
+- **合成的移动操作**
+
+当一个类没有定义任何自己的拷贝控制成员，且类的每个非static数据可移动，编译器才会为其合成移动构造函数和移动赋值运算符。
+
+- **支持移动的对象**
+
+标准库容器，string，shared_ptr 支持移动和拷贝。
+
+IO类和 unique_ptr 可以移动但不能拷贝。
+
+- **右值引用**
+
+rule：右值引用只能绑定到一个将要被销毁的对象（即：没有其他用户），而且只能绑定右值。
+
+```
+int i = 42;
+int &r = i;
+int &&r2 = i * 42;
+const int &r3 = i * 42; // const 左值引用可以绑定右值！！！
+```
+
+Notice: 返回左值的表达式：赋值，下标，解引用，前置递增/递减运算符
+Notice：返回右值的表达式：算术，关系，位，后置递增/递减运算符
+
+- **std::move 函数**
+
+对一个左值，像右值一样处理它，但是这就意味着，除了对 rr1 赋值或销毁之外，我们将不再使用它！
+```
+int rr1 = 42;
+int &&r3 = std::move(rr1);
+```
 
 ## Q：使用 =delete 来阻止一些函数
 
