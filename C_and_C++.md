@@ -407,6 +407,8 @@ public:
   size_t capacity() const { return cap - elements; }
   T* begin() const { return elements; }
   T* end() const { return first_free; }
+  void push_back(const T&);
+  void push_back(T&&);
   // ...
 
 private:
@@ -502,6 +504,23 @@ Vec::reallocate(){
   cap = elements + newcapacity;
 }
 
+// reallocate 的移动操作版
+template<typename T>
+void
+Vec::reallocate2(){
+  auto newcapacity = size() ? 2 * size() : 1;
+  auto first = alloc.allocate(newcapacity);
+  // 移动元素
+  auto last = uninitialized_copy(make_move_iterator(begin()),
+                                 make_move_iterator(end()),
+                                 first);
+  free(); // 释放旧空间
+  // 更新指针
+  elements = first;
+  first_free = last;
+  cap = elements + newcapacity;
+}
+
 // 移动构造函数
 template<typename T>
 Vec::Vec(Vec<T>&& s) noexcept // 移动操作不应抛出任何异常，C++11
@@ -529,11 +548,29 @@ Vec::operator = (Vec<T>&& copy) noexcept{
   return *this;s
 }
 
+// push_back
+template<typename T>
+void
+Vec::push_back(const T& s){
+  chk_n_alloc();
+  alloc.construct(first_free++, s);
+}
+
+// move push_back，如果实参是右值，则调用该函数
+template<typename T>
+void
+Vec::push_back(T&& s){
+  chk_n_alloc();
+  alloc.construct(first_free++, std::move(s));
+}
+
 ```
 
 ## Q：移动
 
 法则：在移动操作后，移后源对象必须保持有效的，可析构的状态，但是用户不能对其值进行任何假设。
+
+大法则：必须绝对确认移后源对象没有其他用户，否则可能导致难以查找的错误。
 
 - **移动构造函数**
 
@@ -567,6 +604,7 @@ const int &r3 = i * 42; // const 左值引用可以绑定右值！！！
 ```
 
 Notice: 返回左值的表达式：赋值，下标，解引用，前置递增/递减运算符
+
 Notice：返回右值的表达式：算术，关系，位，后置递增/递减运算符
 
 - **std::move 函数**
@@ -575,6 +613,58 @@ Notice：返回右值的表达式：算术，关系，位，后置递增/递减�
 ```
 int rr1 = 42;
 int &&r3 = std::move(rr1);
+```
+
+实现方法：
+
+```
+template<typename T>
+typename remove_reference<T>::type&& move(T&& t){
+  return static_cast<typename remove_reference<T>::type&&>(t);
+}
+// 来一个左值，类型为 X，T 被判定为 X&，函数返回 T& &&，折叠为 T&
+// 同理，如果为右值，T 被判定为 X，函数返回 T&&
+```
+
+- **通常同时定义const 左值引用和右值引用函数**
+
+An example:
+```
+void push_back(const X&); // 拷贝
+void push_back(X&&); // 移动，绑定到可修改的右值
+```
+
+## Q：返回左值/右值的操作
+
+
+1. 返回左值的表达式：赋值，下标，<font color=red>解引用</font>，前置递增/递减运算符
+
+2. 返回右值的表达式：算术，关系，位，后置递增/递减运算符
+
+## Q：C++ 数据类型转换
+
+static_cast, dynamic_cast, reinterpret_cast, const_cast
+
+总结：
+
+类指针或引用的上行转换static_cast 和 dynamic_cast 都可以。
+
+类指针或引用的下行转换用dynamic_cast并且判断转换后是否为空。dynamic_cast 在下行转换时有类型检查的功能，比 static_cast 更安全。
+
+基本数据类型之间的转换用static_cast, 但是由于数值范围的不同，需要用户保证转换的安全性。
+
+不同类型之间的指针或引用的转换用reinterpret_cast，它的本质是对指向内存的比特位的重解释。
+
+消除数据的const、volatile、__unaligned属性，用const_cast。
+
+参考1：https://www.cnblogs.com/TenosDoIt/p/3175217.html
+
+
+## Q：function
+
+头文件：functional
+
+```
 ```
 
 ## Q：使用 =delete 来阻止一些函数
@@ -593,7 +683,7 @@ struct NoCopy{
 ```
 
 
-## Q：const
+## Q：const 详解
 
 - **默认状态下，const对象只在文件内有效**
 
@@ -803,12 +893,47 @@ for(auto beg = v.begin(), end = v.end(); beg != end; ++beg){
 }
 ```
 
+## Q：函数的引用限定符，返回左值/右值的函数
+
+```
+class Foo{
+public:
+  Foo& operator = (const Foo&) &; // 返回一个左值
+  // ...
+  Foo sorted() const &;
+  Foo sorted() &&; // 返回一个可改变的右值
+
+private:
+  vector<int> data;
+};
+
+Foo& Foo::operator = (const Foo& copy) &{
+  // 执行拷贝
+  return *this;
+}
+
+// 本对象是 const 的或者左值，两种情况都不能进行原址排序
+Foo Foo::sorted() const &{
+  // *this 不能被修改
+  Foo ret(*this); // 拷贝一个副本
+  sort(ret.data.begin(), ret.data.end()); // 排序副本
+  return ret; // 返回副本
+}
+
+// 本对象为右值，可以原址排序
+Foo Foo::sorted() &&{
+  sort(data.begin(), data.end());
+  return *this;
+}
+
+```
+
 
 ## Q：左值与右值
 
 左值：指那些求值结果作为对象或函数的表达式。
 
-右值：（一般而言）指那些结果是值的表达式。
+右值：（一般而言）指那些结果是值的表达式。右值没有其他用户，操作安全。
 
 summary：当一个对象被用作右值的时候，用的是对象的值（内容）；当对象被用作左值的时候，用的是对象的身份（在内存中的位置）
 
@@ -831,6 +956,7 @@ decltype（declared type）：C++11引入的第二种类型说明符，能返回
 decltype(f()) sum = x; // sum 的类型就是函数 f 的返回类型
 decltype(f) a; // a 的类型是函数类型
 decltype(f) *b; // b 的类型是函数指针类型
+//
 const int ci = 0, &cj = ci;
 decltype(ci) x = 0; // x: const int
 decltype(cj) y = x; // y: const int&
@@ -1581,10 +1707,161 @@ for_each(words.begin(), words.end(),
 ## Q：free 底层实现
 
 
+## Q：容器与继承
+
+当派生类对象赋值给基类对象时，其中的派生类部分将被“切掉”，因此容器和存在继承关系的类型无法兼容。
+
+Tip：因此在容器中放置智能指针是更好的选择
+
+```
+vector<shared_ptr<Quote>> basket;
+```
+
+## Q：继承的构造函数
+
+1. 派生类以非常规的方式重用直接基类的构造函数，但可姑且成为“继承”。
+
+2. 派生类不能继承默认/拷贝/移动构造函数，如果派生类没有直接定义这些函数，编译器就为其合成。
+
+3. 当基类的构造函数含有默认实参，这些实参并不会被继承，并且派生类会获得多个继承的构造函数。
+
+其中每个继承的构造函数省略一个默认实参的形参（其他参数将全部是形参）。
+
+4. 如果派生类定义的构造函数与基类的构造函数具有相同的参数列表，则该构造函数不会被继承。
+
+5. 如果一个类只含有继承的构造函数（不会被看成是用户定义的），编译器会合成一个默认的构造函数。
 
 ## Q：构造函数/析构函数可以是虚函数吗
 
+- **构造函数不能是虚函数**
+
+1. 可行性上不行
+
+调用虚函数需要通过_vftabl指针访问虚函数表，但是对象还没有实例化，在内存空间中都不存在，如何访问虚函数表？
+
+2. 没有意义
+
+构造函数是在创建对象时自动调用的，而不可能通过指针或者引用去调用。并且在创建对象时我们需要明确对象的类型，所以在构造时不需要表现多态性。
+
+- **在构造函数中调用虚函数**
+
+1. 语法可行但没有意义
+
+调用基类（包括自己）的虚函数没有问题，但是如果调用派生类的虚函数是危险的，其可能操作未被初始化的派生类成员（因为派生类对象还没被构造），会产生灾难。
+
+
+- **虚析构函数可以是虚函数**
+
+1. 可行且需要
+
+比如 Base *p = new Derive; Derive 是 Base 的子类。如果 ～Base() 不是虚函数，那么在析构 p 所指向的对象时，只会调用 ～Base() 而不会调用 ~Derive()，因为非虚函数是静态绑定的。此时就无法释放被 Derive 子类 new 出来的空间。
+
+2. 体现多态
+
+尽管我们用的都是父类指针去析构指针所指向的对象，但是会根据虚析构被哪个子类覆盖从而执行对应子类的析构函数，从而能完全析构掉整个类的所有元素。
+
+3. 虚函数的继承
+
+函数的虚属性将被继承，因此：如果基类的析构函数是虚函数，其子类的析构函数（无论是合成的还是自定义的）都是虚函数。
+
+## Q：模板函数允许尾置返回类型
+
+```
+template<typename It>
+auto fcn(It beg, It end) -> decltype(*beg){
+  // processing
+  return *beg; // 返回序列中一个元素的引用，因为解引用范围一个左值
+}
+
+```
+
 ## Q：引用的底层实现
+
+## Q：RTTI（Run Time Type Identification）
+
+## Q：extern C
+
+## Q：设计模式，单例模式，工厂模式
+
+## Q：字节对齐原则
+
+参考1：https://blog.csdn.net/yhc166188/article/details/80679487
+
+Q:字节对齐的原则
+
+从0位置开始存储；
+
+变量存储的起始位置是该变量大小的整数倍；
+
+结构体总的大小是其最大元素的整数倍，不足的后面要补齐；
+
+结构体中包含结构体，从结构体中最大元素的整数倍开始存；
+
+如果加入pragma pack(n) ，取n和变量自身大小较小的一个。
+
+## Q：C++ 锁
+
+## Q：string 类自己实现
+
+## Q：sort 的实现机制
+
+## Q：空结构体 sizeof
+
+参考：https://blog.csdn.net/cbffyx/article/details/14167183
+
+
+空结构体的大小在不同编译器中，值是不同的。
+```
+GCC   sizeof()  return   0
+
+
+G++  sizeof（） return  1
+
+
+GCC permits a C structure to have no members:
+
+     struct empty {
+     };
+
+/*
+The structure will have size zero. 
+In C++, empty structures are part of the language.
+G++ treats empty structures as if they had a single member of type char.
+*/
+```
+
+## Q：静态连接与动态链接的区别
+
+参考1：https://blog.csdn.net/yhc166188/article/details/80679487
+
+静态链接
+
+所谓静态链接就是在编译链接时直接将需要的执行代码拷贝到调用处，优点就是在程序发布的时候就不需要依赖库，也就是不再需要带着库一块发布，程序可以独立执行，但是体积可能会相对大一些。
+
+动态链接
+
+所谓动态链接就是在编译的时候不直接拷贝可执行代码，而是通过记录一系列符号和参数，在程序运行或加载时将这些信息传递给操作系统，操作系统负责将需要的动态库加载到内存中，然后程序在运行到指定的代码时，去共享执行内存中已经加载的动态库可执行代码，最终达到运行时连接的目的。优点是多个程序可以共享同一段代码，而不需要在磁盘上存储多个拷贝，缺点是由于是运行时加载，可能会影响程序的前期执行性能。
+
+## Q：引用折叠规则
+
+引用折叠只能应用于间接创建的引用的引用，如类型别名或模板参数
+```
+X& & -> X&
+X& && -> X&
+X&& & -> X&
+//
+X&& && -> X&&
+//
+// 因此，对于如下的函数模板，可以传递给它任何类型的参数
+template<typename T>
+void func(T&&);
+```
+
+```
+// 通常我们可以定义如下重载
+template<typename T> void f(T&&); // 绑定非const右值
+template<typename T> void f(const T&); // 绑定左值和const右值
+```
 
 
 ## Q：指针和引用的区别
@@ -1596,3 +1873,45 @@ for_each(words.begin(), words.end(),
 (1)引用在创建时必须初始化，指针可以不初始化，引用不可以为NULL指针可以。
 (2)不存在指向空值的引用，但是存在指向空值的指针。
 (3)引用初始化后不能被改变，指针可以改变所指的对象.
+
+## Q：bitset
+
+```
+b.any();
+b.all();
+b.none();
+b.count();
+b.size();
+b.test(pos);
+b.set(pos, v=true);
+b.set();
+b.reset(pos);
+b.reset();
+b.flip(pos);
+b.flip();
+b[pos];
+b.to_ulong(); // 放不下就抛出 overflow_error 异常
+b.to_ullong();
+b.to_string(zero, one);
+os << b;
+is >> b;
+
+```
+
+## Q：C++11 随机数引擎
+
+```
+#include <random>
+//
+vector<unsigned> good_randVec(){
+  static default_random_engine e;
+  static uniform_int_distribution<unsigned> u(0, 9);
+  vector<unsigned> ret;
+  for(size_t i = 0; i < 100; ++i){
+    ret.push_back(u(e));
+  }
+  return ret;
+}
+
+// uniform_real_distribution<double> 浮点数
+```
