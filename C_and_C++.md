@@ -672,7 +672,12 @@ static_cast, dynamic_cast, reinterpret_cast, const_cast
 
 头文件：functional
 
+提供函数对象
+
 ```
+int add(int x,int y){ return x + y; }
+function<int (int, int)> f = add;
+int z = f(x, y);
 ```
 
 ## Q13：使用 =delete 来阻止一些函数
