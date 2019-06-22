@@ -1,8 +1,11 @@
-# Linux_OS_Network
-- Linux Shell
-- Linux 内核
-- 计算机网络
+# Linux_OS
+
 - 操作系统
+- Linux
+
+# Network
+
+- 计算机网络
 
 # C_and_C++
 - C/C++
