@@ -1,7 +1,36 @@
-# Basics Questions
-> 计算机大基础面试问题
+# Linux & Operating System
 
 ---
+
+## Q：Linux top 含义
+
+- VIRT: virtual memory usage 虚拟内存
+
+1. 包括进程使用的代码，数据，库等
+
+- RES: resident memory usage 常驻内存
+
+1. 进程当前使用的内存大小，但不包括 swap out。
+
+2. 包含与其他进程共享的内存部分。
+
+3. 关于库，只统计加载的库文件所占的内存大小。
+
+- SHR: shared memory 共享内存
+
+1. 包含所有共享内存。
+
+2. 虽然进程只使用了几个共享库的函数，但它包含了整个共享库的大小。
+
+3. 计算进程所占的物理内存大小（除共享）：RES - SHR
+
+4. swap out 后，它会降下来。
+
+- DATA: data + stack 数据
+
+1. 数据所占的内存。
+
+2. 真正在运行中要使用的。
 
 ## Q：fork 炸弹
 

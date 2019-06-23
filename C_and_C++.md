@@ -42,9 +42,9 @@
 
 - **C++：五个区**
 
-（1）堆：由new分配的内存块，他们的释放编译器不去管，由我们的应用程序去控制，一般一个new就要对应一个delete。如果程序员没有释放掉， 那么在程序结束后，操作系统会自动回收。向高地址扩展。
+（1）堆：由new分配的内存块，他们的释放编译器不去管，由我们的应用程序去控制，一般一个new就要对应一个delete。如果程序员没有释放掉， 那么在程序结束后，操作系统会自动回收。由低地址向高地址扩展。
 
-（2）栈：由编译器自动分配释放 ，存放函数的参数值，局部变量的值等。向低地址扩展。
+（2）栈：由编译器自动分配释放 ，存放函数的参数值，局部变量的值等。由高地址向低地址扩展。
 
 （3）自由存储区：由malloc等分配的内存块，他和堆是十分相似的， 不过它是用free来结束自己的生命的。
 
@@ -1719,6 +1719,11 @@ for_each(words.begin(), words.end(),
 
 ## Q40：free 底层实现
 
+参考1：https://www.cnblogs.com/vincently/p/4842221.html
+
+包含了缺页中断，malloc 与 free 底层实现
+
+
 ## Q41：容器与继承
 
 当派生类对象赋值给基类对象时，其中的派生类部分将被“切掉”，因此容器和存在继承关系的类型无法兼容。
@@ -1823,6 +1828,10 @@ auto fcn(It beg, It end) -> decltype(*beg){
 
 ## Q46：引用的底层实现
 
+参考1：https://blog.csdn.net/weixin_34376562/article/details/85879495
+
+在底层其实是由指针实现，但在语言级别上，引用只是变量的别名。
+
 ## Q47：RTTI（Run Time Type Identification）
 
 RTTI的功能由两个运算符实现：
@@ -1846,6 +1855,10 @@ Derived *dp = dynamic_cast<Derived*>(bp);
 
 ## Q48：extern "C"
 
+```
+调用C语言代码
+```
+
 ## Q49：设计模式，单例模式，工厂模式
 
 ## Q50：字节对齐原则
@@ -1866,9 +1879,187 @@ Q:字节对齐的原则
 
 ## Q51：C++ 锁
 
+
+
+
 ## Q52：string 类自己实现
 
+参考1：https://blog.csdn.net/ly_6699/article/details/87900932
+
+```
+#include <assert.h>
+#include <string.h>
+
+class String{
+public:
+    String(const char* str = ""){
+      if(nullptr == str){
+        assert(false);
+        return;
+      }
+      _size = strlen(str);
+      _capacity = _size;
+      _str = new char[_capacity + 1];
+      strcpy(_str, str);
+    }
+
+    String(const String& s):
+      _str(nullptr),
+      _size(0),
+      _capacity(0)
+    {
+      String tmp(s._str);
+      this->Swap(tmp);
+    }
+
+    void Swap(String& s){
+      std::swap(_str, s._str);
+      std::swap(_size, s._size);
+      std::swap(_capacity, s._capacity);
+    }
+
+    String& operator = (String s){
+      this->Swap(s);
+      return *this;
+    }
+
+    ~String(){
+      if(_str){
+        delete[] _str;
+        _size = _capacity = 0;
+      }
+    }
+
+    char* c_str(){
+      return _str;
+    }
+
+    bool operator < (const String& s){
+      return strcmp(_str, s._str) < 0;
+    }
+
+    bool operator > (const String& s){
+      return strcmp(_str, s._str) > 0;
+    }
+
+    bool operator == (const String& s){
+      return strcmp(_str, s._str) == 0;
+    }
+
+    bool operator <= (const String& s){
+      return ((*this < s) || (*this == s));
+    }
+
+    bool operator >= (const String& s){
+      return ((*this > s) || (*this == s));
+    }
+
+    bool operator != (const String& s){
+      return !(*this == s);
+    }
+
+    void Reserve(size_t n){
+      if(_capacity < n){
+        char* str = new char[2 * n + 1]; // 分配一块新的空间
+        strcpy(str, _str);
+        str = nullptr;
+        delete[] _str;
+        _str = str;
+        _capacity = n;
+      }
+      return;
+    }
+
+    void Push_back(const char ch){
+      Reserve(_size + 1);
+      _str[_size++] = ch;
+      _str[_size] = '\0';
+    }
+
+    void Append(const char* str){
+      Reverse(_size + strlen(str));
+      strcpy(_str + _size, str);
+      _size += strlen(str);
+    }
+
+    String& operator += (const char ch){
+      Push_back(ch);
+      return *this;
+    }
+
+    String& operator += (const char* str){
+      Append(str);
+      return *this;
+    }
+
+    String& operator += (const String& s){
+      Append(s.c_str());
+      return *this;
+    }
+
+    void Insert(size_t pos, const char ch){
+      assert(pos <= _size);
+      Reserve(_size + 1);
+      size_t end = _size;
+      while(end >= pos){
+        _str[end + 1] = _str[end];
+        --end;
+      }
+      _str[pos] = ch;
+      ++_size;
+    }
+
+    void Insert(size_t pos, const char* str){
+      assert(pos <= _size);
+      const size_t len = strlen(str);
+      Reserve(_size + len);
+      size_t end = _size;
+      while(end >= pos){
+        _str[end + len] = _str[end];
+        --end;
+      }
+      strcpy(_str + pos, str);
+      _size += len;
+    }
+
+    void Erase(size_t pos, size_t len){
+      assert(pos < _size);
+      size_t start = pos + len;
+      while(start < _size){
+        _str[start - len] = _str[start];
+        ++start;
+      }
+      _str[start - len] = '\0';
+      _size = start - len - _str;
+    }
+
+    char& operator [] (size_t index){
+      assert(index <= _size);
+      return _str[index];
+    }
+
+private:
+    char* _str;
+    size_t _size;
+    size_t _capacity;
+    static size_t npos;
+}
+
+```
+
 ## Q53：sort 的实现机制
+
+参考1：STL源码剖析
+
+参考2：https://www.cnblogs.com/ygh1229/articles/9806398.html
+
+Introspective Sort（内省排序）：
+
+1. 三点中值法
+
+2. 递归深度阈值：2log2(N)，超过就调用 heapsort
+
+3. 根据 __stl_threshold = 16 的阈值，对小于阈值的小区间采用插入排序
 
 ## Q54：空结构体 sizeof
 
@@ -1980,3 +2171,13 @@ vector<unsigned> good_randVec(){
 
 // uniform_real_distribution<double> 浮点数
 ```
+
+## Q：深入理解数组名与数组指针
+
+数组名：
+
+1. 其内涵在于指代一种数据结构，而该数据结构就是数组，并且可以转换为指代实体的指针（指针常量 const ptr）。
+
+2. 数组名在作为函数形参时，会退化为指针。
+
+因此 sizeof（数组名）将得到数组大小（字节数）。
