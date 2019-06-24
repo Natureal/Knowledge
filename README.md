@@ -26,6 +26,13 @@
 
 1. 牛客网 Linux C/C++ 学习路线：https://www.nowcoder.com/discuss/193598?type=2&order=0&pos=24&page=2
 
+## To do list
+
+1. GDB 学习
+
+2. 简历修改（英语水平，解决名词堆砌问题）
+
+
 ## 收集的面经
 
 1. 2018 C++开发面试题集合：https://blog.csdn.net/damage233/article/details/81116115

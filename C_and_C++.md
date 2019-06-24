@@ -1102,8 +1102,48 @@ pair<string, string> author{"James", "Joyce"};
 
 ## Q22：迭代器
 
+- **种类**
+
+参考1：https://www.cnblogs.com/zl1991/p/4670482.html
+
+![](imgs/20190624_1.jpg)
+
+（并非继承）
+
+1. 输入迭代器（input iterator）
+
+从容器中读入元素，表现地像输入流
+
+2. 输出迭代器（output iterator）
+
+向容器中写入元素，表现地像输出流
+
+3. 正向迭代器（forward iterator）
+
+像是输入和输出迭代器的结合体，所以该迭代器即可以访问元素，也可以修改元素。
+
+4. 双向迭代器（bidirectional iterator）
+
+在前向的基础上可以向前移动。
+
+5. 随机存取迭代器（random access iterator）
+
+在双向的基础上，允许随机访问序列的任意值。
+
+（1）可以递增/递减
+
+（2）可以比较大小，是否相等
+
+（3）支持算术运算（p+n)
+
+（4）支持随机访问（p[n]）
+
+（5）支持符合运算（p+=n）
+
+- **散话**
+
 ```
-vector<int>::iterator it1;
+vector<int>::iterator it1;M
 string::iterator it2;
 
 vector<int>::const_iterator it3; // it3 只能读取元素，不能修改元素
@@ -1122,7 +1162,7 @@ auto rit2 = v.crend();
 Notice：任何一种可能改变 vector 对象容器的操作，比如添加元素 push_back，都会使该 vector 对象的迭代器失效。不仅仅是 vector，这条规则对任何容器都适用。
 
 
-- **iostream 迭代器**
+- **istream 迭代器**
 
 ```
 istream_iterator<int> int_it(cin);
@@ -1142,7 +1182,7 @@ vector<int> vec(int_it, eof);
 
 ```
 
-ostream_iterator 操作
+- **ostream 迭代器**
 
 ```
 ostream_iterator<int> out_it(cout, " ");
