@@ -216,6 +216,7 @@ Notice：waitpid 可以清除僵尸进程，无法 kill 掉，但是直接杀死
 
 中断处理是优先级最高的任务之一。中断通常由I/O设备产生，例如网络接口卡、键盘、磁盘控制器、串行适配器等等。中断处理器通过一个事件通知内核（例如，键盘输入、以太网帧到达等等）。它让内核中断进程的执行，并尽可能快地执行中断处理，因为一些设备需要快速的响应。它是系统稳定的关键。当一个中断信号到达内核，内核必须切换当前的进程到一个新的中断处理进程。这意味着中断引起了上下文切换，因此大量的中断将会引起性能的下降。在Linux的实现中，有两种类型的中断。硬中断是由请求响应的设备发出的（磁盘I/O中断、网络适配器中断、键盘中断、鼠标中断）。软中断被用于处理可以延迟的任务（TCP/IP操作，SCSI协议操作等等）。你可以在/proc/interrupts文件中查看硬中断的相关信息。在多处理器的环境中，中断被每一个处理器处理。绑定中断到单个的物理处理中能提高系统的性能。
 
+
 ## Q：Linux 中的 进程栈，线程栈，内核栈，中断栈
 
 1. **进程栈**
@@ -251,7 +252,7 @@ Notice：waitpid 可以清除僵尸进程，无法 kill 掉，但是直接杀死
 
 3. **进程内核栈**
 
-进程在内核态时，内核代码所使用的栈，大小为THREAD_SIZE，一般为一个页大小：4KB。
+进程在内核态时，内核代码所使用的栈，大小为THREAD_SIZE，一般为2个页大小：8KB（32bit），16KB（64bit）。
 
 在该栈的栈顶有 struct thread_info，里面有 struct task_struct *task。
 
@@ -393,6 +394,37 @@ SCHED_RR：有时间片，其值在进程运行时会减少。在所有的时间
 
 通常，中断处理程序（上半部分）要执行得越快越好。
 
+
+## Q：软中断与tasklet
+
+First thing：软中断，BH（bottom half），tasklet 并不同，它们并驾齐驱。
+
+（实现工作推后的三种机制：软中断，tasklet，工作队列。）
+
+**软中断**
+
+（1）软中断用的比较少，而 tasklet 是下半部更常用的一种形式，其通过软中断实现。
+
+（2）唯一可以抢占软中断的是中断处理程序。
+
+（3）在中断处理程序中触发软中断是最常见的方式。此时，中断处理程序执行硬件设备的相关操作，然后触发相应的软中断，最后退出。内核在执行完中断处理程序后，马上调用 do_softirq() 函数，于是软中断开始执行中断处理程序留给它去完成的剩余任务。
+
+（4）使用者很少，只在那些执行频率很高，对连续性要求很高的情况下才需要使用。
+
+**tasklet**
+
+（1）tasklet 可以动态生成，它对加锁的要求不高，易用，性能非常不错。在本质上和软中断很像。有广泛的用途。
+
+（2）因为是靠软中断实现的，tesklet 不能睡眠。
+
+```
+// 静态创建
+DECLARE_TASKLET(name, func, data);
+DECLARE_TASKLET_DISABLED(name, func, data);
+// 调度
+tasklet_schedule(&my_tasklet); // 把 my_tasklet 标记为挂起
+```
+
 ## Q：Linux 内核同步方法与锁
 
 随着 2.6 版本内核的出现，调度程序已经可以在任何时刻抢占正在运行的内核代码（不加保护的情况下），调度其他的进程。
@@ -405,10 +437,47 @@ SCHED_RR：有时间片，其值在进程运行时会减少。在所有的时间
 
 1. 原子操作
 
+（1）原子整数操作最常见的用途就是实现计数器。
+
+（2）比加锁的开销小，极端高性能优化可以考虑。
+
+```
+typedef struct{
+  volatile int counter;
+}atomic_t;
+
+atomic_t v;
+atomic_t u = ATOMIC_INIT(0);
+atomic_set(&v, 4);
+atomic_add(2, &v);
+atomic_inc(&v);
+atomic_dec(&v);
+int atomic_dec_and_test(atomic_t *v);
+printk("%d\n", atomic_read(&v));
+```
+
+（3）原子级位操作
+
+可以和一般的 C 语句混子一起。
+
+```
+unsigned long word = 0;
+set_bit(0, &word);
+set_bit(1, &word);
+clear_bit(1, &word);
+change_bit(0, &word);
+int a = test_and_set_bit(1, &word);
+int b = test_and_clear_bit(2, &word);
+int c = test_bit(3, &word);
+word = 7;
+//
+// 以上都有等价的非原子操作，例如：
+__test_bit();
+```
 
 2. 自旋锁（spin lock）
 
-一个被争用的自旋锁使得请求它的线程在等待锁重新可用时自旋（很浪费处理器时间），所以自旋锁不应该被长时间持有。
+一个被争用的自旋锁使得请求它的线程在等待锁重新可用时自旋（很浪费处理器时间），所以自旋锁不应该被长时间持有（更不应该在持有时去睡眠）。
 
 自旋锁的设计初衷：在短期间内进行轻量级加锁。（相比于让别的线程睡眠需要上下文切换：信号量）
 
@@ -440,19 +509,154 @@ write_lock(&mr_rwlock);
 write_unlock(&mr_rwlock);
 ```
 
-4. 信号量
+4. 信号量（semaphore）
 
-信号量是一种睡眠锁（推进一个等待队列）。
+（1）信号量是一种睡眠锁（推进一个等待队列）。适用于锁会被长时间持有的情况。
 
+（2）可以在持有信号量时去睡眠。（
+
+（3）在占用信号量的同时不能占用自旋锁。（因为持有自旋锁不允许睡眠）
+
+（4）不同于自旋锁，信号量不会禁止内核抢占，所以持有信号量的代码可以被抢占。（不会对调度的等待时间带来负面影响）
+
+（5）在一个时刻仅允许一个锁持有者，称为二值信号量/互斥信号量。
+
+```
+// 方式1
+struct semaphore name;
+sema_init(&name, count);
+// 方式2
+static DECLARE_MUTEX(name);
+// 方式3，通过指针创建
+sema_init(sem, count);
+init_MUTEX(sem); // 互斥信号量
+```
 
 5. 读/写信号量
 
+```
+static DECLARE_RWSEM(mr_rwsem);
+init_rwsem(struct rw_semaphore *sem);
+//
+down_read(&mr_rwsem);
+up_read(&mr_rwsem);
+down_write(&mr_rwsem);
+up_write(&mr_rwsem);
+// down_read_trylock();
+// down_write_trylock();
+// downgrade_write(); // 动态地将获取的写锁降级为读锁
+```
 
 6. 互斥体
 
+（1）更简单的睡眠互斥锁（计数为1）。操作接口更简单，实现也更高效，使用限制更强。
 
-## Q：Linux 软中断
+（2）必须在一个上下文中上锁和解锁。这个限制使得 mutex 不适合内核同用户空间复杂的同步场景。
 
+（3）当持有一个 mutex 时，进程不可以退出。
+
+（4）mutex 不能在中断或者下半部中使用。（可能引起睡眠的都不行）
+
+（5）mutex 只能通过官方 API 管理，只能官方初始化，不可被拷贝、手动初始化/重复初始化。
+
+```
+// 静态地定义 mutex
+DEFINE_MUTEX(name);
+// 动态地定义 mutex
+mutex_init(&mutex);
+//
+// struct mutex mutex;
+// 锁定和解锁
+mutex_lock(&mutex);
+mutex_unlock(&mutex);
+// 试图获取锁，成功返回1，失败返回0
+mutex_trylock(&mutex);
+// 判断锁是否已被争用
+mutex_is_locked(&mutex);
+```
+
+7. 完成变量（completion variable）
+
+（1）类似一个信号量，定义在 <linux/completion.h> 中。
+
+（2）例子：当子进程执行或退出时，vfork()系统调用使用完成变量唤醒父进程。
+
+（3）通常用法：将完成变量作为数据结构中的一项动态创建，而等待其完成初始化工作的内核代码将调用 wait_for_completion() 进行等待。初始化完成后，初始化函数调用 completion() 唤醒正在等待的内核任务。
+
+```
+// 静态创建
+DECLRE_COMPLETION(mr_comp);
+// 动态创建
+init_completion(struct completion *);
+// 需要等待一个完成变量的任务调用：
+wait_for_completion(struct completion *);
+// 完成特定事件，产生事件的任务调用：
+completion(struct completion *); // 发送信号
+```
+
+8. 大内核锁
+
+参考1：https://blog.csdn.net/chenyu105/article/details/7726492
+
+大内核锁(BKL)的设计是在kernel hacker们对多处理器的同步还没有十足把握时，引入的大粒度锁。
+他的设计思想是，一旦某个内核路径获取了这把锁，那么其他所有的内核路径都不能再获取到这把锁。
+
+9. 顺序锁
+
+（1）用于读写共享数据。
+
+（2）锁的初始值是0，写锁会使值变成奇数，释放的时候会变成偶数。
+
+（3）seq 锁有助于提供一种非常轻量级和具有可扩展性的外观。
+
+适合于以下情况：
+
+数据存在很多读者，写者很少，写优先于读，数据结构很简单。
+
+```
+seqlock_t mr_seq_lock = DEFINE_SEQLOCK(mr_seq_lock);
+// 写锁的方法如下:
+write_seqlock(&mr_seq_lock);
+// ...
+write_sequnlock(&mr_seq_lock);
+// 读操作
+unsigned long seq;
+do{
+  seq = read_seqbegin(&mr_seq_lock);
+}while(read_seqretry(&mr_seq_lock, seq));
+```
+
+10. 禁止抢占
+
+如果存在一些数据对每个处理器是唯一的，那么就不需要使用锁来保护，因为数据只能被一个处理器访问。此时需要禁止抢占！
+
+```
+preempt_disable();
+// 抢占被禁止
+preempt_enable();
+// 抢占计数
+preempt_count();
+// 激活内核抢占但不再检查任何被挂起的需调度任务
+preempt_enable_no_resched();
+//
+// 另一种方式禁止抢占
+int cpu;
+cpu = get_cpu(); // 禁止抢占
+// ....
+put_cpu();
+```
+11. 顺序和屏障
+
+可以用 barrier 操作保证顺序。
+
+```
+rmb();
+wmb();
+read_barrier_depends();
+```
+
+
+## Q：Linux 每 CPU 操作
 
 ## Q：fork 与 exec 的区别
 
@@ -586,6 +790,123 @@ fork 之后，只有当进程空间内各段的内容要发生变化时，才会
 （2）与管道的区别：将服务器与客户端明确区分出来。可实现一服务器，多客户端。
 
 
+## Q：Linux 内存管理
+
+- **页**
+
+MMU（Memory Management Unit）的最小处理单位。在 32 位体系结构中大多 4KB，而在 64 位体系结构中大多 8KB。
+
+以下的结构目的在于描述物理内存本身，而不是其中的数据。
+
+```
+struct page{
+  unsigned long flags;
+  atomic_t _count;
+  atomic_t _mapcount;
+  unsigned long private;
+  struct address_space *mapping;
+  pgoff_t index;
+  struct list_head lru;
+  void *virtual;
+  ...
+};
+```
+
+页分配：
+
+```
+// 定义在 <linux/gfp.h> 中
+// 返回 2^order 个连续的物理页，返回第一个物理页的 page
+struct page* alloc_pages(gfp_t gfp_mask, unsigned int order);
+// 物理页转换到逻辑页
+void* page_address(struct page* page);
+// 或者直接申请page返回逻辑地址
+unsigned  long __get_free_pages(gfp_t gfp_mask, unsigned int order);
+// 如果只需要一页
+struct page* alloc_page(gfp_t gfp_mask);
+unsigned long __get_free_page(gfp_t gfp_mask);
+// 获取内容全0的页
+unsigned long get_zeroed_page(unsigned int gfp_mask);
+```
+
+页释放：
+
+```
+void __free_pages(struct page* page, unsigned int order);
+void free_pages(unsigned long addr, unsigned int order);
+void free_page(unsigned long addr);
+```
+
+- **区**
+
+内核把页分为不同的区（zone），是一种逻辑上的分组。
+
+大致三个区，以下为在x86-32上：
+
+（1）ZONE_DMA：DMA使用的页，<16 MB
+
+（2）ZONE_NORMAL：正常可寻址的页，16~896 MB
+
+（3）ZONE_HIGHMEM：动态映射的页，>896 MB
+
+
+- **kmalloc()**
+
+在 <linux/slab.h> 中声明。
+
+（1）与 malloc() 类似，但是多了一个  flags 参数。
+
+（2）分配的内存去在物理上是连续的。（虚拟地址自然也是连续的）
+
+（3）许多硬件设备需要用物理上连续的内存块。
+
+```
+// 出错返回 NULL
+void* kmalloc(size_t size, gfp_t flags);
+```
+
+（3）kfree()：
+
+```
+void kfree(const void *ptr); // 注意要释放由 kmalloc 开的内存才行
+//
+char *buf;
+buf = kmalloc(BUF_SIZE, GFP_ATOMIC);
+if(!buf){
+  // ... 出错
+}
+kfree(buf);
+```
+
+- **vmalloc()**
+
+（1）分配的内存虚拟地址是连续的。（物理上不一定连续）
+
+（2）供软件使用的内存快可以只有虚拟地址连续性。
+
+（3）为了获得大内存块时使用，容易导致大的 TLB（translation lookaside buffer）抖动。
+
+```
+void *vmalloc(unsigned long size); // 函数可能睡眠/阻塞
+void vfree(const void *addr); // 也可以睡眠
+char *buf;
+buf = vmalloc(16 * PAGE_SIZE);
+if(!buf){
+  // error
+}
+vfree(buf);
+```
+
+- **slab层**
+
+（1）slab 分配器扮演了通用数据结构缓存层的角色。
+
+（2）slab 层的管理是在高速缓存的基础上的，通过提供给整个内核一个简单的接口来完成。通过接口就可以创建和撤销新的高速缓存。
+
+（3）kmalloc 的接口建立在 slab 层之上，使用一组通用高速缓存。
+
+（4）一般一个 slab 就一页，每个高速缓存可以有多个 slab。
+
 
 
 ## Q：Linux 启动流程
@@ -643,6 +964,58 @@ fork 之后，只有当进程空间内各段的内容要发生变化时，才会
 
 6 - reboot，系统正常关闭并重启。
 
+## Q：Linux NPTL 多线程库
+
+NPTL 线程库解决了 LinuxTheads 线程库的一系列问题，其主要优势在于：
+
+（1）内核线程不再是一个进程。
+
+（2）摒弃了管理线程，而终止线程、回收线程堆栈等工作都可以由内核来完成。
+
+（3）一个进程的线程可以运行在不同的 CPU 上，从而充分利用了多处理器系统的优势。
+
+（4）线程的同步由内核来完成，可以实现跨进程的线程同步。
+
+- **创建/结束线程**
+
+线程标识符：
+
+```
+// pthread_t 的定义如下
+#include <bits/pthreadtypes.h>
+typedef unsigned long int pthread_t;
+```
+
+创建线程：
+
+```
+#include <pthread.h>
+int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
+                  void *(*start_routine)(void *), void *arg);
+```
+
+结束线程（最好要调用，确保安全、干净地退出）：
+
+```
+void pthread_exit(void *retval);
+```
+
+回收线程（类似于 wait，waitpid 系统调用）：
+
+```
+// 会一直阻塞，直到被回收的线程结束
+int pthread_join(pthread_t thread, void **retval);
+```
+
+取消线程（异常终止一个线程）：
+
+```
+int pthread_cancel(pthread_t thread);
+//
+// 接受到取消请求的线程可以决定是否允许被取消以及如何取消
+int pthread_setcancelstate(int state, int *oldstate);
+int pthread_setcanceltype(int type, int *oldtype);
+```
 
 
 ### Q：Linux fork函数
