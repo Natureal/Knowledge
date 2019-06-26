@@ -2212,7 +2212,7 @@ vector<unsigned> good_randVec(){
 // uniform_real_distribution<double> 浮点数
 ```
 
-## Q：深入理解数组名与数组指针
+## Q60：深入理解数组名与数组指针
 
 数组名：
 
