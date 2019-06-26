@@ -263,6 +263,14 @@ Notice：waitpid 可以清除僵尸进程，无法 kill 掉，但是直接杀死
 系统收到中断事件后，进行中断处理时，需要中断栈来支持函数调用。此时处于内核态，所以中断栈和内核栈可以共享，但这和处理器架构相关。（如：ARM 架构即没有独立的中断栈）
 
 
+### Q：Linux fork函数
+
+Linux 实现进程的原理，分两个步骤：
+
+（1) 在内存中复制父进程，得到子进程，此时子进程就是父进程上下文的简单克隆，内容完全一致。
+
+（2) 设置子进程PID，PPID等和父进程不一样的内容。
+
 
 ## Q：Linux 线程调度
 
@@ -964,7 +972,7 @@ vfree(buf);
 
 6 - reboot，系统正常关闭并重启。
 
-## Q：Linux NPTL 多线程库
+## Q：Linux NPTL 多线程库 与 多线程编程
 
 NPTL 线程库解决了 LinuxTheads 线程库的一系列问题，其主要优势在于：
 
@@ -976,7 +984,7 @@ NPTL 线程库解决了 LinuxTheads 线程库的一系列问题，其主要优�
 
 （4）线程的同步由内核来完成，可以实现跨进程的线程同步。
 
-- **创建/结束线程**
+- **线程属性 与 创建/结束线程**
 
 线程标识符：
 
@@ -984,6 +992,57 @@ NPTL 线程库解决了 LinuxTheads 线程库的一系列问题，其主要优�
 // pthread_t 的定义如下
 #include <bits/pthreadtypes.h>
 typedef unsigned long int pthread_t;
+```
+
+线程属性：
+
+```
+#include <bits/pthreadtypes.h>
+#define __SIZEOF_PTHREAD_ATTR_T 36
+typedef union{
+  char __size[__SIZEOF_PTHREAD_ATTR_T];
+  long int __align;
+}pthread_attr_t;
+//
+#include <pthread.h>
+// 操作线程属性的函数：
+// 初始化线程属性对象
+int pthread_attr_init(pthread_attr_t *attr);
+// 销毁线程属性对象
+int pthread_attr_destroy(pthread_attr_t *attr);
+//
+// 获取和设置线程属性对象的某个属性
+//
+// detachstate: 线程的脱离状态
+int pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate);
+int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate);
+// 线程堆栈的起始地址
+int pthread_attr_getstackaddr(const pthread_attr_t *attr, void **stackaddr);
+int pthread_attr_setstackaddr(pthread_attr_t *attr, void *stackaddr);
+// 线程堆栈的大小（可以用 ulimit -s 来查看）
+int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize);
+int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize);
+int pthread_attr_getstack(const pthread_attr_t *attr, void **stackaddr, size_t *stacksize);
+int pthread_attr_setstack(pthread_attr_t *attr, void *stackaddr, size_t stacksize);
+//　guardsize（保护区域大小），系统创建线程时，会在其堆栈的尾部额外分配 guardsize 字节的空间
+//　作为保护堆栈不被错误地覆盖的区域
+int pthread_attr_getguardsize(const pthread_attr_t *__attr, size_t *guardsize);
+int pthread_attr_setguardsize(pthread_attr_t *attr, size_t guardsize);
+//　线程调度参数
+int pthread_attr_getschedparam(const pthread_attr_t *attr, struct sched_param *param);
+int pthread_attr_getschedparam(pthread_attr_t *attr, const struct sched_param *param);
+//　线程调度策略，属性有 SCHED_FIFO, SCHED_RR, SCHED_OTHER（默认）这三个可选值
+int pthread_attr_getschedpolicy(const pthread_attr_t *attr, int *policy);
+int pthread_attr_setschedpolicy(pthread_attr_t *attr, int policy);
+//　是否继承调用线程的调度属性
+int pthread_attr_getinheritsched(const pthread_attr_t *attr, int inherit);
+int pthread_attr_setinheritsched(pthread_attr_t *attr, int inherit);
+//　线程间竞争 CPU 的范围（即：线程优先级的有效范围），POSIX 标准规定有两个可选值
+// PTHREAD_SCOPE_SYSTEM（目标线程与系统中所有线程一起竞争 CPU 的使用）
+// PTHREAD_SCOPE_PROCESS（目标线程仅与其他隶属于同一进程的线程竞争 CPU 的使用）
+// 目标 Linux 只支持 PTHREAD_SCOPE_SYSTEM 这一种取值
+int pthread_attr_getscope(const pthread_attr_t *attr, int *scope);
+int pthread_attr_setscope(pthread_attr_t *attr, int scope);
 ```
 
 创建线程：
@@ -1000,7 +1059,11 @@ int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
 void pthread_exit(void *retval);
 ```
 
-回收线程（类似于 wait，waitpid 系统调用）：
+回收/结合线程（类似于 wait，waitpid 系统调用）：
+
+一个可结合的线程能够被其他线程收回资源和杀死。
+
+作用：主线程需要等待子线程执行完成之后再结束（即等待子线程的终止），比如需要用到子线程的处理结果。
 
 ```
 // 会一直阻塞，直到被回收的线程结束
@@ -1017,14 +1080,175 @@ int pthread_setcancelstate(int state, int *oldstate);
 int pthread_setcanceltype(int type, int *oldtype);
 ```
 
+- **POSIX 信号量**
 
-### Q：Linux fork函数
+用于线程同步机制
 
-Linux 实现进程的原理，分两个步骤：
+```
+#include <semaphore.h>
+int sem_init(sem_t *sem, int pshared, unsigned int value);
+int sem_destroy(sem_t *sem);
+// 以原子操作的方式将信号量的值减1, 如果值为0, 则函数被阻塞
+int sem_wait(sem_t *sem);
+// 非阻塞版本, 如果信号量为0, 它将返回-1并设置errno为EAGAIN
+int sem_trywait(sem_t *sem);
+// 以原子操作的方式将信号量的值加1, 当值大于0时, 其他正在调用sem_wait的等待信号量的线程将被唤醒
+int sem_post(sem_t *sem);
+```
 
-（1) 在内存中复制父进程，得到子进程，此时子进程就是父进程上下文的简单克隆，内容完全一致。
+- **互斥锁**
 
-（2) 设置子进程PID，PPID等和父进程不一样的内容。
+```
+#include <pthread.h>
+int pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *mutexattr);
+// 第二种初始化的方式
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; // 把互斥锁的各个字段都初始化为0
+int pthread_mutex_destroy(pthread_mutex_t *mutex);
+int pthread_mutex_lock(pthread_mutex_t *mutex);
+int pthread_mutex_trylock(pthread_mutex_t *mutex);
+int pthread_mutex_unlock(pthread_mutex_t *mutex);
+```
+
+互斥锁属性:
+```
+#include <pthread.h>
+int pthread_mutexattr_init(pthread_mutexattr_t *attr);
+int pthread_mutexattr_destroy(pthread_mutexattr_t *attr);
+// pshared 指定是否允许跨进程共享互斥锁
+int pthread_mutexattr_getpshared(const pthread_mutexattr_t *attr, int *pshared);
+int pthread_mutexattr_setpshared(pthread_mutexattr_t *attr, int pshared);
+// type 是互斥锁的种类
+// PTHREAD_MUTEX_NORMAL, 普通锁(互斥锁默认类型)
+// PTHREAD_MUTEX_ERRORCHECK, 检错锁
+// PTHREAD_MUTEX_RECURSIVE, 嵌套锁
+// PTHREAD_MUTEX_DEFAULT, 默认锁
+int pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type);
+int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type);
+```
+
+- **条件变量**
+
+互斥锁: 用于同步线程对共享数据的访问
+
+条件变量: 在线程之间同步共享数据的值,  其提供了一种线程间的通知机制: 当某个共享数据达到某个值的时候, 唤醒等待这个共享数据的线程
+
+```
+#include <pthread.h>
+int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *cond_attr);
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+int pthread_cond_destroy(pthread_cond_t *cond);
+int pthread_cond_broadcast(pthread_cond_t *cond);
+int pthread_cond_signal(pthread_cond_t *cond);
+int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex);
+```
+
+- **线程同步机制包装类**
+
+实现在 locker.h 文件中
+```
+#ifndef LOCKER_H
+#define LOCKER_H
+
+#include <exception>
+#include <pthread.h>
+#include <semaphore.h>
+
+// 封装信号量的类
+class sem{
+public:
+  sem(){
+    if(sem_init(&m_sem, 0, 0) != 0){
+      // 如果构造函数没有返回值, 抛出异常
+      throw std::exception();
+    }
+  }
+  ~sem(){
+    sem_destroy(&m_sem);
+  }
+  // 等待/获取 信号量
+  bool wait(){
+    return sem_wait(&m_sem) == 0;
+  }
+  // 增加信号量
+  bool post(){
+    return sem_post(&m_sem) == 0;
+  }
+
+private:
+  sem_t m_sem;
+
+};
+
+// 封装互斥锁的类
+class locker{
+public:
+  locker(){
+    if(pthread_mutex_init(&m_mutex, NULL) != 0){
+      throw std::exception();
+    }
+  }
+  ~locker(){
+    pthread_mutex_destroy(&m_mutex);
+  }
+  bool lock(){
+    return pthread_mutex_lock(&m_mutex) == 0;
+  }
+  bool unlock(){
+    return pthread_mutex_unlock(&m_mutex) == 0;
+  }
+
+private:
+  pthread_mutex_t m_mutex;
+
+}
+
+// 封装条件变量的类
+class cond{
+public:
+  cond(){
+    if(pthread_mutex_init(&m_mutex, NULL) != 0){
+      throw std::exception();
+    }
+    if(pthread_cond_init(&m_cond, NULL) != 0){
+      // 构造函数一旦出问题, 就应该立即释放已经被成功分配了的资源(mutex)
+      pthread_mutex_destroy(&m_mutex);
+      throw std::exception();
+    }
+  }
+  ~cond(){
+    pthread_mutex_destroy(&m_mutex);
+    pthread_cond_destroy(&m_cond);
+  }
+  bool wait(){
+    int ret = 0;
+    pthread_mutex_lock(&m_mutex);
+    ret = pthread_cond_wait(&m_cond, &m_mutex);
+    pthread_mutex_unlock(&m_mutex);
+    return ret == 0;
+  }
+  // 唤醒等待条件变量的线程
+  bool signal(){
+    return pthread_cond_signal(&m_cond) == 0;
+  }
+
+private:
+  pthread_mutex_t m_mutex;
+  pthread_cond_t m_cond;
+
+}
+
+```
+
+- **线程安全**
+
+如果一个函数能被多个线程同时调用且不发生竞态条件, 则称它是线程安全的(thread safe)，或者可重入函数。
+
+（Linux 库函数只有一小部分是不可重入的。主要原因是其内部使用了静态变量。不可重入函数 localtime 的可重入版本是 localtime_r。（加 r 是惯例））
+
+## Q：
+
+
+
 
 
 ### Q：Linux 内存分页机制
