@@ -1899,7 +1899,73 @@ Derived *dp = dynamic_cast<Derived*>(bp);
 调用C语言代码
 ```
 
-## Q49：设计模式，单例模式，工厂模式
+## Q49：设计模式：单例模式，工厂模式
+
+- **单例模式**
+
+（1）一个类只允许创建唯一的对象
+
+（2）禁止在类的外部创建对象，私有化构造函数(private / protected)
+
+（3）类的内部维护唯一对象：静态成员变量
+
+（4）提供访问单例对象的方法：静态成员函数，返回在类内部唯一构造的实例
+
+（5）两种创建方式：饿汉式（一开始就创建单例对象），懒汉式（单例对象在用的时候创建，不用就销毁）
+
+```
+class Singleton{
+public:
+  static Singleton *get_instance(){
+    // 双重 check NULL 是为了防止两个线程同时到达此并都进入第一层循环后出的 bug
+    if(m_instance == NULL){
+      // lock(); // 多线程下
+      if(m_instance == NULL){
+        m_instance = new Singleton();
+      }
+      // unlock(); // 多线程下
+    }
+    return m_instance;
+  }
+
+  static void destroy_instance(){
+    if(m_instance){
+      delete m_instance;
+      m_instance = NULL;
+    }
+  }
+
+  int get_val(){
+    return m_val;
+  }
+
+
+private:
+  Singleton(){
+    m_val = 10;
+  }
+  static Singleton *m_instance; // 静态单例
+  int m_val; // 成员变量
+};
+
+// 初始化静态单例
+Singleton *Singleton::m_instance = NULL;
+
+int main(){
+  Singleton *instance_ptr = Singleton::get_instance();
+  Singleton::destroy_instance();
+  return 0;
+}
+
+```
+
+
+
+
+
+
+- **工厂模式**
+
 
 ## Q50：字节对齐原则
 

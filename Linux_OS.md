@@ -1268,6 +1268,47 @@ private:
 （3）
 
 
+## Q：Linux 中的 stat 函数
+
+参考1：https://www.cnblogs.com/sylar5/p/6491033.html
+
+```
+#include <sys/stat.h>
+#include <unistd.h>
+// 获取 file_name 文件的文件信息
+// 执行成功返回0，失败返回-1，并设置错误码：
+//
+// ENOENT：指定文件不存在
+// ENOTDIR：不是一个目录
+// ELOOP：目标文件有过多符号连接问题（上限为16符号连接）
+// EFAULT：参数buf为无效指针，指向不存在的空间
+// EACCESS：存取文件时被拒绝
+// ENOMEM：核心内存不足
+// ENAMETOOLONG：参数file_name太长
+//
+int stat(const char *file_name, struct stat *buf);
+
+//
+
+struct stat{
+  dev_t   st_dev;  // 文件的设备编号
+  ino_t   st_ino;  // inode 节点编号
+  mode_t  st_mode; // 文件的类型和存取权限
+  nlink_t st_nlink;// 连到该文件的硬连接数目，刚建立的文件该值为1
+  uid_t   st_uid;  // 用户ID
+  gid_t   st_gid;  // 组ID
+  dev_t   st_rdev; // （设备类型）若此文件为设备文件，则此为设备编号
+  off_t   st_size; // 文件大小（字节数）
+  unsigned long st_blksize; // 块大小（文件系统的I/O缓冲区大小）
+  unsigned long st_blocks;  // 块数
+  time_t  st_atime;// 最后一次访问（access）时间
+  time_t  st_mtime;// 最后一次修改（modify）时间
+  time_t  st_ctime;// 最后一次改变（change）时间（指属性）
+};
+
+```
+
+
 
 ### Q：Linux 内存分页机制
 
