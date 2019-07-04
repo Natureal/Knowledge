@@ -1142,6 +1142,8 @@ int pthread_cond_signal(pthread_cond_t *cond);
 int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex);
 ```
 
+条件变量详解参考1：https://blog.csdn.net/fchyang/article/details/81202877
+
 - **线程同步机制包装类**
 
 实现在 locker.h 文件中
