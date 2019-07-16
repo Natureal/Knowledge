@@ -32,6 +32,12 @@
 
 2. 简历修改（英语水平，解决名词堆砌问题）
 
+3. epoll 源码阅读
+
+4. Linux 内存池源码阅读
+
+5. 阿里云 tengine Preview + Nginx 学习
+
 
 ## 收集的面经
 
@@ -40,3 +46,7 @@
 3. 阿里+腾讯C++全部面：https://cloud.tencent.com/developer/article/1112267
 3. 整理的C++面试题：https://blog.csdn.net/ljzcome/article/details/574158
 4. 牛客2018 BAT华为网易C++：https://www.nowcoder.com/discuss/103939?type=0&order=0&pos=11&page=0
+5. BAT面试模块总结：https://mp.weixin.qq.com/s?__biz=MzU2MTkwMTE4Nw==&mid=2247486817&amp;idx=1&amp;sn=d16ee32eb1cb422f39222af29d1a835e&source=41#wechat_redirect
+6. 腾讯后台开发实习生要求：https://mp.weixin.qq.com/s?__biz=MzU2MTkwMTE4Nw==&mid=2247486790&amp;idx=1&amp;sn=74c324da3cd3c8da62d261a87bd93ae9&source=41#wechat_redirect
+7. 高性能服务器2018总结：https://blog.csdn.net/analogous_love/article/details/86483266
+8. 数据库题集：https://blog.csdn.net/si444555666777/article/details/82111355

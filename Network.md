@@ -332,3 +332,7 @@ MIME类型由两个部分组成：（1）数据的大类别 （2）具体的种�
 （12）ReadAudio音乐文件 .ra/.ram： audio/x-pn-realaudio
 
 （13）MIDI音乐文件 .midi： audio/x-midi
+
+## Q：Apache、Nginx、Tomcat
+
+## Q：nginx
