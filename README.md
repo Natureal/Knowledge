@@ -7,12 +7,15 @@
 
 - 计算机网络
 
-# C_and_C++
-- C/C++
+# Programming_Language
+- 核心: C/C++
+- Python
+- Java
 
 # Database
 - General database knowledge
 - MySQL
+- Redis
 
 # Distribution
 - General Distributed System Knowledge
@@ -21,10 +24,7 @@
 - Spark
 - Kubernetes
 - Kafka
-
-## 学习 path
-
-1. 牛客网 Linux C/C++ 学习路线：https://www.nowcoder.com/discuss/193598?type=2&order=0&pos=24&page=2
+- Zoomkeeper
 
 ## To do list
 
@@ -37,6 +37,10 @@
 4. Linux 内存池源码阅读
 
 5. 阿里云 tengine Preview + Nginx 学习
+
+## 学习 path
+
+1. 牛客网 Linux C/C++ 学习路线：https://www.nowcoder.com/discuss/193598?type=2&order=0&pos=24&page=2
 
 
 ## 收集的面经
