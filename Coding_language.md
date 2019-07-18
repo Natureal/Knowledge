@@ -2305,3 +2305,5 @@ vector<unsigned> good_randVec(){
 ## Q63：C/C++ open fopen freopen
 
 参考1：https://www.cnblogs.com/fnlingnzb-learner/p/7040726.html
+
+## Q64：

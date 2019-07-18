@@ -156,3 +156,9 @@ Notice: 隔离级别越高，越能保证完整性和一致性，但并发性能
 （2）终止/撤销进程
 
 （3）银行家算法
+南方
+## Q：MySQL 端口号，如何修改
+
+1. 查看：show global variables like 'port';（MySQL默认3306，SQLServer默认1433，Oracle默认1521，DB2默认5000）
+
+2. 修改：编辑 /etc/my.cnf

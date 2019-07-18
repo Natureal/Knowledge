@@ -1,6 +1,113 @@
 # Linux & Operating System
 
+参考1：网上博客
+
+参考2：《深入理解计算机系统》
+
 ---
+
+## Q：Linux 虚拟内存
+
+- **虚拟内存的作用**
+
+1. 内存保护，使得每个进程的地址空间不被其他进程破坏。（每个PTE有三个许可位：SUP（是否内核模式才能访问），READ 和 WRITE 分别控制页面的读写访问。如果违反保护机制，则出现段错误（Segmentation fault）。）
+
+2. 为每个进程提供了一致的地址空间，从而简化了内存管理。
+
+3. 使得主存只保存活动区域（在磁盘和主存之间来回传送数据），高效使用了主存。**局部性是关键**
+
+4. 提供了内存共享，支持了进程通信/共享库文件的机制。
+
+5. 地址连续的虚存在物理上不一定连续，因此可以利用碎片。
+
+
+- **结构**
+
+虚拟页面（VP）由三个集合构成，每个虚拟页通常是 4KB ～ 2MB
+
+1. 未分配的
+
+2. 缓存的：当前已缓存在物理内存中的已分配页
+
+3. 未缓存的：未缓存在物理内存中的已分配页
+
+- **实现方式**
+
+1. MMU（Memory Management Unit）内存管理单元：地址翻译硬件 + 存放在物理内存中的页表（page table）。
+
+2. 页表负责将虚拟页映射到物理页。页表是一个页表条目（page table entry, PTE）的数组，PTE有一个有效位（是否缓存），有效位被设置，则已缓存并保存物理页起始地址。有效位没被设置，如果未分配则指向空地址null，已分配则指向虚拟页起始地址。
+
+3. 操作系统负责维护页表的内容，以及在磁盘与DRAM之间来回传送页。
+
+- **问题**
+
+1. 当程序的活动页面集合大小超出了物理内存的大小，将会频繁产生页面换进换出，称为**抖动（thrashing）**。
+
+2. 虚存管理需要额外的内存。
+
+3. 虚存地址转换需要额外的指令执行。
+
+4. 如果一页中只有一部分数据，则浪费内存。
+
+- **进程虚存**
+
+[0 -> 0x400000)：保留
+
+\[0x400000 -> A\]：代码段（只读，存放执行代码，包括：.init、.text（机器语言和代码）、.rodata（字符串和const）
+
+\[A -> B\]：数据段 or 读/写段（.data（已初始化的全局变量）、.bss（block started by symbol，存放未初始化的全局/静态变量，并不占可执行文件的大小，它由链接器获取内存，获取后内存全部清零）
+
+\[B -> C\]：堆（动态分配内存，紧跟在.bss后面，从低地址向高地址增长，采用链式存储结构。堆的效率比栈低得多。）
+
+\[C -> D\]：共享库的内存映射区域
+
+\[D -> E\]：栈（由编译器自动释放，存放函数局部变量、参数、返回类型等；从高地址向低地址增长，是一块连续的内存区域，最大容量由系统预先定义，64 位默认 8MB。）
+
+\[E -> F\]：内核虚拟内存（内核代码和数据 + 物理内存 + 与进程相关的数据结构（页表、task、mm、内核栈等））
+
+- **MMU详解**
+
+1. CPU 中的一个控制寄存器，页表基址寄存器（page table base register, PTBR）指向当前页表。
+
+2. n 位的虚拟地址包含：p 位的虚拟页面偏移（VPO），n-p 位的虚拟页号（VPN），MMU就是利用 VPN 来寻找 PTE。
+
+3. PTE 条目中包含：p 位的物理页面偏移（PPO），m-p 位的物理页号（PPN）。物理/虚拟页面都是 P 字节所以偏移都是 p 位的。
+
+4. MMU 中有一个关于 PTE 的小缓存（translation lookaside buffer，TLB）
+
+- **多级页表**
+
+1. 如果一级页表是空的，对应的二级页表也不存在。
+
+2. 一级页表存在于主存，但二级页表不一定，可以被调入/调出/创建，可以只缓存最常使用的二级页表。
+
+- **缺页中断**
+
+1. 缺页本身是一种中断，所以有（1）保护CPU现场（2）分析中断原因（3）转入缺页中断处理程序进行处理（4）恢复CPU现场，继续执行。
+
+2. 缺页中断由硬件产生，与一般的中断存在区别：（1）在指令执行期间产生和处理缺页中断信号（2）一条指令的执行可能引发多次缺页中断（3）缺页中断返回的是执行产生中断的一条指令，而一般中断返回下一条指令。
+
+- **task_struct 中的 mm_struct 详解**
+
+1. mm_struct 描述了虚拟内存的当前状态。
+
+2. pgd （page global directory）成员指向第一级页表（页全局目录）的基址。32位机中，PGD 存放虚拟地址的最高 10 位，为全局页目录表索引。PTE 存放中间 10 位，为页表入口索引。现在衍生出了三级/四级页表。目前是四级：PGD->PUD->PMD->PTE。
+
+3. mmap 成员指向一个 vm_area_structs （区域结构）的链表，每个结构体都描述了当前虚拟地址空间的一个区域。（1）vm_start：区域起始处（2）vm_end：区域结束处（3）vm_prot：区域内所有页的读写权限（4）vm_flags：描述信息，如是否私有/共享（5）vm_next：指向下一个结构体。
+
+
+## Q：Linux fork() 与 vfork()
+
+1. 调用 fork() 时，内核为新进程分配 PID，创建当前进程的 mm_struct、和其成员（区域结构、页表）的副本。将两个进程中的每个页面都标记为只读。并将两个进程中的每个区域结构都标记为私有的写时复制。
+
+2. vfork() 后挂起父进程直到子进程终止或者运行了一个新的可执行文件的映像。子进程必须立刻执行一次 exec() 或者 _exit()。
+
+
+## Q：Linux 修改文件最大句柄数
+
+1. 查看可用 ulimit -a
+
+2. 修改用 ulimit -n <数字>，将当前进程/shell有效果。
 
 ## Q：Linux top 含义
 
@@ -216,7 +323,6 @@ Notice：waitpid 可以清除僵尸进程，无法 kill 掉，但是直接杀死
 
 中断处理是优先级最高的任务之一。中断通常由I/O设备产生，例如网络接口卡、键盘、磁盘控制器、串行适配器等等。中断处理器通过一个事件通知内核（例如，键盘输入、以太网帧到达等等）。它让内核中断进程的执行，并尽可能快地执行中断处理，因为一些设备需要快速的响应。它是系统稳定的关键。当一个中断信号到达内核，内核必须切换当前的进程到一个新的中断处理进程。这意味着中断引起了上下文切换，因此大量的中断将会引起性能的下降。在Linux的实现中，有两种类型的中断。硬中断是由请求响应的设备发出的（磁盘I/O中断、网络适配器中断、键盘中断、鼠标中断）。软中断被用于处理可以延迟的任务（TCP/IP操作，SCSI协议操作等等）。你可以在/proc/interrupts文件中查看硬中断的相关信息。在多处理器的环境中，中断被每一个处理器处理。绑定中断到单个的物理处理中能提高系统的性能。
 
-
 ## Q：Linux 中的 进程栈，线程栈，内核栈，中断栈
 
 1. **进程栈**
@@ -263,13 +369,29 @@ Notice：waitpid 可以清除僵尸进程，无法 kill 掉，但是直接杀死
 系统收到中断事件后，进行中断处理时，需要中断栈来支持函数调用。此时处于内核态，所以中断栈和内核栈可以共享，但这和处理器架构相关。（如：ARM 架构即没有独立的中断栈）
 
 
-### Q：Linux fork函数
+## Q：Linux fork函数
 
 Linux 实现进程的原理，分两个步骤：
 
 （1) 在内存中复制父进程，得到子进程，此时子进程就是父进程上下文的简单克隆，内容完全一致。
 
 （2) 设置子进程PID，PPID等和父进程不一样的内容。
+
+## Q：为什么还要有线程
+
+1. 线程切换的时间远小于进程切换，进程大概是线程的 30 倍。
+
+2. 不同线程可以运行在不同 CPU 核心上。
+
+3. 利于通信。
+
+## Q：单核 CPU 上是否需要线程锁
+
+1. 需要，因为在抢占式操作系统中，存在线程切换运行，而他们共享某些数据，因此需要同步。
+
+## Q：线程切换需要保存的上下文
+
+1. 线程 ID，
 
 
 ## Q：Linux 线程调度
@@ -999,15 +1121,18 @@ typedef unsigned long int pthread_t;
 ```
 #include <bits/pthreadtypes.h>
 #define __SIZEOF_PTHREAD_ATTR_T 36
+//
 typedef union{
   char __size[__SIZEOF_PTHREAD_ATTR_T];
   long int __align;
 }pthread_attr_t;
 //
+//
 #include <pthread.h>
 // 操作线程属性的函数：
 // 初始化线程属性对象
 int pthread_attr_init(pthread_attr_t *attr);
+//
 // 销毁线程属性对象
 int pthread_attr_destroy(pthread_attr_t *attr);
 //
@@ -1016,27 +1141,34 @@ int pthread_attr_destroy(pthread_attr_t *attr);
 // detachstate: 线程的脱离状态
 int pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate);
 int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate);
+//
 // 线程堆栈的起始地址
 int pthread_attr_getstackaddr(const pthread_attr_t *attr, void **stackaddr);
 int pthread_attr_setstackaddr(pthread_attr_t *attr, void *stackaddr);
+//
 // 线程堆栈的大小（可以用 ulimit -s 来查看）
 int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize);
 int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize);
 int pthread_attr_getstack(const pthread_attr_t *attr, void **stackaddr, size_t *stacksize);
 int pthread_attr_setstack(pthread_attr_t *attr, void *stackaddr, size_t stacksize);
+//
 //　guardsize（保护区域大小），系统创建线程时，会在其堆栈的尾部额外分配 guardsize 字节的空间
 //　作为保护堆栈不被错误地覆盖的区域
 int pthread_attr_getguardsize(const pthread_attr_t *__attr, size_t *guardsize);
 int pthread_attr_setguardsize(pthread_attr_t *attr, size_t guardsize);
+//
 //　线程调度参数
 int pthread_attr_getschedparam(const pthread_attr_t *attr, struct sched_param *param);
 int pthread_attr_getschedparam(pthread_attr_t *attr, const struct sched_param *param);
+//
 //　线程调度策略，属性有 SCHED_FIFO, SCHED_RR, SCHED_OTHER（默认）这三个可选值
 int pthread_attr_getschedpolicy(const pthread_attr_t *attr, int *policy);
 int pthread_attr_setschedpolicy(pthread_attr_t *attr, int policy);
+//
 //　是否继承调用线程的调度属性
 int pthread_attr_getinheritsched(const pthread_attr_t *attr, int inherit);
 int pthread_attr_setinheritsched(pthread_attr_t *attr, int inherit);
+//
 //　线程间竞争 CPU 的范围（即：线程优先级的有效范围），POSIX 标准规定有两个可选值
 // PTHREAD_SCOPE_SYSTEM（目标线程与系统中所有线程一起竞争 CPU 的使用）
 // PTHREAD_SCOPE_PROCESS（目标线程仅与其他隶属于同一进程的线程竞争 CPU 的使用）
@@ -1088,10 +1220,13 @@ int pthread_setcanceltype(int type, int *oldtype);
 #include <semaphore.h>
 int sem_init(sem_t *sem, int pshared, unsigned int value);
 int sem_destroy(sem_t *sem);
+//
 // 以原子操作的方式将信号量的值减1, 如果值为0, 则函数被阻塞
 int sem_wait(sem_t *sem);
+//
 // 非阻塞版本, 如果信号量为0, 它将返回-1并设置errno为EAGAIN
 int sem_trywait(sem_t *sem);
+//
 // 以原子操作的方式将信号量的值加1, 当值大于0时, 其他正在调用sem_wait的等待信号量的线程将被唤醒
 int sem_post(sem_t *sem);
 ```
@@ -1101,6 +1236,7 @@ int sem_post(sem_t *sem);
 ```
 #include <pthread.h>
 int pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *mutexattr);
+//
 // 第二种初始化的方式
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; // 把互斥锁的各个字段都初始化为0
 int pthread_mutex_destroy(pthread_mutex_t *mutex);
