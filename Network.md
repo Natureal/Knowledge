@@ -1,5 +1,10 @@
 # Network
 
+参考1：《Linux 高性能服务器编程》
+
+参考2：《HTTP 权威指南》
+
+待参考：《TCP/IP详解》三卷本
 
 ## Q：访问一个网页的全过程
 
@@ -190,7 +195,7 @@ Content-Language：响应正文使用的语言
 
 GET
 
-```
+```html
 GET /search?hl=zh-CN&source=hp&q=domety&aq=f&oq= HTTP/1.1
 Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, application/vnd.ms-excel, application/vnd.ms-powerpoint,
 application/msword, application/x-silverlight, application/x-shockwave-flash, */*
@@ -207,7 +212,7 @@ FxlRugatx63JLv7CWMD6UB_O_r
 
 POST
 
-```
+```html
 POST /search HTTP/1.1
 Accept: image/gif, image/x-xbitmap
 Connection: Keep-Alive
@@ -218,7 +223,7 @@ username=zhangsan&password=123
 
 （2）HTTP响应报文例子
 
-```
+```html
 HTTP/1.1 200 OK
 Date: Sat, 31 Dec 2005 23:59:59 GMT
 Content-Type: text/html;charset=ISO-8859-1
