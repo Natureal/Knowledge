@@ -1,23 +1,27 @@
-# Linux_OS
+### [Notebook](https://github.com/Natureal/Job-hunting/blob/master/Notebook.md)
+
+- 随笔
+
+### [Linux_OS](https://github.com/Natureal/Job-hunting/blob/master/Linux_OS.md)
 
 - 操作系统
 - Linux
 
-# Network
+### [Network](https://github.com/Natureal/Job-hunting/blob/master/Network.md)
 
 - 计算机网络
 
-# Coding_language
+### [Coding_language](https://github.com/Natureal/Job-hunting/blob/master/Coding_language.md)
 - 核心: C/C++
 - Python
 - Java
 
-# Database
+## [Database](https://github.com/Natureal/Job-hunting/blob/master/Database.md)
 - General database knowledge
 - MySQL
 - Redis
 
-# Distribution
+### [Distribution](https://github.com/Natureal/Job-hunting/blob/master/Distribution.md)
 - General Distributed System Knowledge
 - Docker
 - Hadoop
@@ -28,9 +32,9 @@
 
 ## To do list
 
-1. GDB 学习
+1. GDB 学习 **doing**
 
-2. 简历修改（英语水平，解决名词堆砌问题）
+2. 简历修改（添加英语水平，解决名词堆砌问题）**Finished**
 
 3. epoll 源码阅读
 

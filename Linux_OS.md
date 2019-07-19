@@ -4,7 +4,15 @@
 
 参考2：《Linux 内核设计与实现》
 
+参考3：牛客网C++面试宝典
+
 ---
+
+## Q：宏内核与微内核
+
+1. 宏内核 (如Linux)：集成了最基本的进程/线程管理、内存管理，以及文件系统、驱动、网络协议等。评价：效率高，但稳定性差。
+
+2. 微内核 (如QNX)：只有最基本的调度、内存管理。驱动、文件系统由用户态的守护进程来管理。评价：稳定，但效率低。
 
 ## Q：Linux 虚拟内存
 
@@ -149,6 +157,8 @@
 
 2. 用户空间中的代码只有通过内核暴露的系统调用接口(System Call Interface)才能使用到系统中的硬件资源。需要操作系统帮助完成一些其无权完成的工作时，进程会切换到内核态：
 
+**实际上三种原因导致的切换，都相当于执行了一个中断相应的过程。**
+
 （1）系统调用
 
 用户态进程主动要求切换到内核态，系统调用机制的核心，是操作系统开放的一个中断来实现（如 Linux int 80h 中断）。
@@ -173,13 +183,13 @@
 
 1. 读取 tr 寄存器，访问 TSS 段。
 
-2. 从 TSS 段中的 sp0 获取进程内核栈的栈顶指针。
+2. 从 TSS 段中的 **sp0 获取进程内核栈的栈顶指针**。
 
 3. 由控制单元在内核中保存当前 eflags(status register)/cs(code segment)/ss(stack segment)/eip(next instruction pointer)/esp(stack top pointer) 寄存器的值。
 
-4. 由汇编SAVE_ALL保存寄存器的值到内核栈。
+4. 由汇编SAVE_ALL**保存寄存器的值到内核栈**。
 
-5. 把内核代码选择符写入CS寄存器，内核栈指针写入ESP寄存器，把内核入口点线性地址写入EIP寄存器。
+5. 把内核代码选择符写入**CS寄存器**，内核栈指针写入**ESP寄存器**，把内核入口点线性地址写入**EIP寄存器**。
 
 完成切换，根据EIP执行下一条指令。
 
@@ -207,8 +217,6 @@
 ```
 
 - fork炸弹以极快的速度创建大量进程（进程数呈以2为底数的指数增长趋势），并以此消耗系统分配予进程的可用空间使进程表饱和，而系统在进程表饱和后就无法运行新程序，除非进程表中的某一进程终止；但由于fork炸弹程序所创建的所有实例都会不断探测空缺的进程槽并尝试取用以创建新进程，因而即使在某进程终止后也基本不可能运行新进程。fork炸弹生成的子程序在消耗进程表空间的同时也会占用CPU和内存，从而导致系统与现有进程运行速度放缓，响应时间也会随之大幅增加，以致于无法正常完成任务，从而使系统的正常运作受到严重影响。
-
-
 
 ## Q：Linux 进程概念与进程管理
 
@@ -337,6 +345,16 @@ Notice：waitpid 可以清除僵尸进程，无法 kill 掉，但是直接杀死
 
 中断处理是优先级最高的任务之一。中断通常由I/O设备产生，例如网络接口卡、键盘、磁盘控制器、串行适配器等等。中断处理器通过一个事件通知内核（例如，键盘输入、以太网帧到达等等）。它让内核中断进程的执行，并尽可能快地执行中断处理，因为一些设备需要快速的响应。它是系统稳定的关键。当一个中断信号到达内核，内核必须切换当前的进程到一个新的中断处理进程。这意味着中断引起了上下文切换，因此大量的中断将会引起性能的下降。在Linux的实现中，有两种类型的中断。硬中断是由请求响应的设备发出的（磁盘I/O中断、网络适配器中断、键盘中断、鼠标中断）。软中断被用于处理可以延迟的任务（TCP/IP操作，SCSI协议操作等等）。你可以在/proc/interrupts文件中查看硬中断的相关信息。在多处理器的环境中，中断被每一个处理器处理。绑定中断到单个的物理处理中能提高系统的性能。
 
+## Q：孤儿进程与僵尸进程
+
+1. 孤儿进程：父进程退出，而它的子进程们还在运行，则这些子进程成为孤儿，由 init 进程所收养，并完成它们的状态收集工作。
+
+2. 僵尸进程：一个进程使用 fork() 后，如果子进程退出，但父进程没有调用 wait() / waitpid() 获取子进程的状态信息，那么子进程的进程描述符（task_struct）仍然保存在系统中，该种进程称为僵尸进程。（每个子进程在 exit() 后，必定会经历僵尸状态。）
+
+僵尸进程过多：导致进程号一直被占用。解决方法：SIGTERM 或 SIGKILL。
+
+不产生僵尸进程的方法：两次 fork()：第一次 fork 之后子进程再 fork，然后马上 exit()，这样孙子进程归 init 所管。
+
 ## Q：Linux 中的 进程栈，线程栈，内核栈，中断栈
 
 1. **进程栈**
@@ -399,8 +417,6 @@ Linux 实现进程的原理，分两个步骤：
 
 3. 利于通信。
 
-## Q：Linux 中的 4 种锁
-
 ## Q：单核 CPU 上是否需要线程锁
 
 1. 需要，因为在抢占式操作系统中，存在线程切换运行，而他们共享某些数据，因此需要同步。
@@ -447,15 +463,20 @@ Linux 实现进程的原理，分两个步骤：
 
 1. 进程是由内核来管理和调度的，进程的切换只能发生在内核态。
 
-2. **在 CPU 的角度，进程的上下文**：CPU 寄存器（包含页目录指针、内核栈顶指针、硬件上下文）、TLB（MMU的缓存）
+2. **在 CPU 的角度，进程的上下文**：CPU 寄存器（包含页目录指针、栈指针、硬件上下文）、TLB（MMU的缓存）
 
 3. **在资源的角度，进程的上下文**：进程用户态资源（代码段、用户栈、堆等）+ 内核态资源（页目录、内核栈、task_struct 等）
 
 4. 因此进程切换包括：刷新 TLB、更新 CPU 寄存器（页目录指针、内核栈顶指针、硬件上下文）。
 
-- **同个进程内不同线程切换**
+- **线程切换与线程上下文**
 
-1. 需要切换：部分 CPU 寄存器（内核栈顶指针、硬件上下文）。
+1. **在 CPU 的角度，线程私有的上下文**：CPU 寄存器（栈指针、硬件上下文）
+
+2. **在资源的角度，线程私有的上下文**：线程用户态资源（用户栈）+ 内核态资源（内核栈、task_struct 等）
+
+３. 因此线程切换包括：更新部分 CPU 寄存器（内核栈顶指针、硬件上下文）。
+
 
 - **中断上下文**
 
@@ -481,6 +502,83 @@ union thread_union
     struct thread_info thread_info;
     unsigned long stack[THREAD_SIZE/sizeof(long)];
 };
+```
+
+## Q：Linux C 打印线程/进程 ID
+
+1. ID 种类
+
+（1）**pid**：进程 ID。
+
+（2）**lwp**（light-weight process）：线程 ID，可用 ps -aL 查看。
+
+（3）**tid**：等于 lwp，在系统接口函数中常用，如 syscall(SYS_gettid)、syscall(_NR_gettid)。
+
+（4）**tgid**：线程组 ID，等于 pid，为线程组 leader 线程的 pid。
+
+（5）**thread_id**：pthread_id，进程内线程的局部 ID
+
+2. 获取进程 pid
+
+```cpp
+int pid = getpid();
+```
+
+3. 获取线程局部 pthread id (不同进程中的线程可能有相同的 pthread id)
+
+```cpp
+unsigned long int thread_id = pthread_self();
+pthread_t thread_id_same;
+pthread_create(&thread_id_same, NULL, void (*func)(void*), NULL);
+// thread_id == thread_id_same
+```
+
+4. 获取线程 lwp/tid
+
+```cpp
+int lwp = syscall(SYS_gettid);
+int tip = syscall(_NR_gettid);
+```
+
+5. 获取
+
+**测试程序**
+
+```cpp
+#include <stdio.h>
+#include <unistd.h>
+#include <pthread.h>
+#include <sys/types.h>
+#include <sys/syscall.h>
+using namespace std;
+
+void *hello(void *str)
+{
+    printf("child, pthread_self()=%lu, syscall(SYS_gettid)=%d\n",pthread_self(),syscall(SYS_gettid));
+    printf("child, getpid()=%d\n",getpid());
+}
+
+int main(int argc, char *argv[])
+{
+    pthread_t thread_id;
+    pthread_create(&thread_id,NULL,hello,NULL);
+    printf("parent, pthread_self()=%lu, syscall(SYS_gettid)=%d\n",pthread_self(),syscall(SYS_gettid));
+    printf("parent, getpid()=%d\n",getpid());
+	printf("pthread_t thread_id=%lu\n", thread_id);
+    pthread_join(thread_id,NULL);
+    return 0;
+}
+```
+
+运行结果：
+
+```cpp
+parent, pthread_self()=140071570339648, syscall(SYS_gettid)=11963
+parent, getpid()=11963
+pthread_t thread_id=140071561897728
+child, pthread_self()=140071561897728, syscall(SYS_gettid)=11964
+child, getpid()=11963
+
 ```
 
 ## Q：Linux 虚拟内存调度
