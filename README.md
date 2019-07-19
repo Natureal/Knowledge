@@ -1,27 +1,29 @@
-#### [Notebook](https://github.com/Natureal/Job-hunting/blob/master/Notebook.md)
+#### Navigator: [Notebook](https://github.com/Natureal/Job-hunting/blob/master/Notebook.md) | [Linux_OS](https://github.com/Natureal/Job-hunting/blob/master/Linux_OS.md) | [Network](https://github.com/Natureal/Job-hunting/blob/master/Network.md) | [Coding_language](https://github.com/Natureal/Job-hunting/blob/master/Coding_language.md) | [Database](https://github.com/Natureal/Job-hunting/blob/master/Database.md) | [Distribution](https://github.com/Natureal/Job-hunting/blob/master/Distribution.md)
+
+#### Notebook
 
 - 随笔
 
-#### [Linux_OS](https://github.com/Natureal/Job-hunting/blob/master/Linux_OS.md)
+#### Linux_OS
 
 - 操作系统
 - Linux
 
-#### [Network](https://github.com/Natureal/Job-hunting/blob/master/Network.md)
+#### Network
 
 - 计算机网络
 
-#### [Coding_language](https://github.com/Natureal/Job-hunting/blob/master/Coding_language.md)
+#### Coding_language
 - 核心: C/C++
 - Python
 - Java
 
-#### [Database](https://github.com/Natureal/Job-hunting/blob/master/Database.md)
+#### Database
 - General database knowledge
 - MySQL
 - Redis
 
-#### [Distribution](https://github.com/Natureal/Job-hunting/blob/master/Distribution.md)
+#### Distribution
 - General Distributed System Knowledge
 - Docker
 - Hadoop
