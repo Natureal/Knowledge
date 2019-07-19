@@ -1,27 +1,27 @@
-### [Notebook](https://github.com/Natureal/Job-hunting/blob/master/Notebook.md)
+#### [Notebook](https://github.com/Natureal/Job-hunting/blob/master/Notebook.md)
 
 - 随笔
 
-### [Linux_OS](https://github.com/Natureal/Job-hunting/blob/master/Linux_OS.md)
+#### [Linux_OS](https://github.com/Natureal/Job-hunting/blob/master/Linux_OS.md)
 
 - 操作系统
 - Linux
 
-### [Network](https://github.com/Natureal/Job-hunting/blob/master/Network.md)
+#### [Network](https://github.com/Natureal/Job-hunting/blob/master/Network.md)
 
 - 计算机网络
 
-### [Coding_language](https://github.com/Natureal/Job-hunting/blob/master/Coding_language.md)
+#### [Coding_language](https://github.com/Natureal/Job-hunting/blob/master/Coding_language.md)
 - 核心: C/C++
 - Python
 - Java
 
-## [Database](https://github.com/Natureal/Job-hunting/blob/master/Database.md)
+#### [Database](https://github.com/Natureal/Job-hunting/blob/master/Database.md)
 - General database knowledge
 - MySQL
 - Redis
 
-### [Distribution](https://github.com/Natureal/Job-hunting/blob/master/Distribution.md)
+#### [Distribution](https://github.com/Natureal/Job-hunting/blob/master/Distribution.md)
 - General Distributed System Knowledge
 - Docker
 - Hadoop
@@ -30,7 +30,7 @@
 - Kafka
 - Zoomkeeper
 
-## To do list
+### To do list
 
 1. GDB 学习 **doing**
 
@@ -42,12 +42,12 @@
 
 5. 阿里云 tengine Preview + Nginx 学习
 
-## 学习 path
+### 学习 path
 
 1. 牛客网 Linux C/C++ 学习路线：https://www.nowcoder.com/discuss/193598?type=2&order=0&pos=24&page=2
 
 
-## 收集的面经
+### 收集的面经
 
 1. 2018 C++开发面试题集合：https://blog.csdn.net/damage233/article/details/81116115
 2. 蚂蚁金服C++研发一面：https://blog.csdn.net/weixin_34161064/article/details/87084619
