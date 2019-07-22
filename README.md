@@ -34,7 +34,7 @@
 
 ### To do list
 
-1. GDB 学习 **doing**
+1. GDB 学习 **Finished**
 
 2. 简历修改（添加英语水平，解决名词堆砌问题）**Finished**
 
@@ -42,7 +42,11 @@
 
 4. Linux 内存池源码阅读
 
-5. 阿里云 tengine Preview + Nginx 学习
+5. 阿里云 tengine Preview + Nginx 学习 **doing**
+
+6. 阿里云天基关键词：Linux，HTTP，网络IO，磁盘IO，多线程，大规模分布式网络/存储系统研发
+
+7. muduo 网络库源码学习
 
 ### 学习 path
 
