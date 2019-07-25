@@ -13,7 +13,7 @@
 
 - 计算机网络
 
-#### Coding_language
+#### Language
 - 核心: C/C++
 - Python
 - Java
