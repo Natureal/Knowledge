@@ -48,6 +48,8 @@
 
 7. muduo 网络库源码学习
 
+8. IPC 调用摸底 + preview 底层 eBPF
+
 ### 学习 path
 
 1. 牛客网 Linux C/C++ 学习路线：https://www.nowcoder.com/discuss/193598?type=2&order=0&pos=24&page=2

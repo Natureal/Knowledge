@@ -2397,3 +2397,415 @@ char *p = &a[0][0][0];
 ```cpp
 int a[3][2] 等价于 *(*(a + 3) + 2)
 ```
+
+## Q67：fwrite 和 fread 缓冲区问题
+
+参考1：https://blog.csdn.net/J_H_C/article/details/83868262
+
+fwrite() 函数会先将数据写入内存中的缓冲区，等程序结束后才会将数据写入文件。可以用 fflush(fout) 刷新缓冲区，立即写入文件。
+
+**缓冲区刷新的情况：**
+
+1. 程序正常结束。作为 main 返回工作的一部分，将清空所有输出缓冲区。（如果程序异常终止，则不会刷新缓冲区！）
+
+2. 在一些不确定的时候，缓冲区可能已经满了，在这种情况下，缓冲区将会
+在写下一个值之前刷新。
+
+3. 可以使用操作符endl、flush和ends来显示的刷新缓冲区。这三个都是IO库中的操作符，endl能完成换行和刷新缓冲区的工作。flush只完成刷新缓冲区的工作。而ends会向缓冲区插入一个空字符，然后刷新缓冲区。例子如下：
+
+```cpp
+
+#include <algorithm>
+#include <string>
+#include <iterator>
+
+using namespace std;
+
+int main()
+{
+	cout << "hi" << endl;
+	cout << "hi" << flush;
+	cout << "hi" << ends;
+  cout << "hi"; //当系统比较空闲的时候，会查看缓冲区的内容，如果发现有新的内容，系统就会将缓冲区的内容输出出来
+
+	system("pause");
+	return 0;
+}
+```
+
+4. 在每次输出操作执行完后，用 unitbuf 操作符设置流的内部状态，从而
+清空缓冲区。
+
+```cpp
+cout << unitbuf;      //所有的输出操作后都会立即刷新缓冲区
+cout << nounitbuf;    //回到正常的缓冲方式
+```
+
+5. 可将输出流与输入流关联（tie 函数）起来。在这种情况下，在读输入流时将
+刷新其关联的输出缓冲区。
+
+Plus 6. 当系统比较空闲的时候，会查看缓冲区的内容，如果发现有新的内容，系统就会将缓冲区的内容输出出来
+
+## Q68：SGI STL 内存池源码剖析
+
+#### 1. 总体结构
+
+1. 为了考虑小块内存的碎片问题，采用了双层级配置器结构。
+
+**（1）** 第一级配置器直接使用 malloc() / free()，处理 > 128B 的情况
+
+```cpp
+__malloc_alloc_template
+```
+
+细节：
+
+（i）allocate() 直接使用 malloc()， deallocate() 直接使用 free()。
+
+（ii）模拟 C++ set_new_handler() 以处理内存不足的状况。（set_new_handler函数的作用是设置new_p指向的函数为new操作或new[]操作失败时调用的处理函数。）
+
+**（2）** 第二级配置器采用 memory pool，处理 <= 128B 的情况
+
+```cpp
+__default_alloc_template
+```
+
+细节：
+
+（i）维护了 16 个自由链表（free list），负责 16 种小块内存的配置。（具体为 8,16，...，128字节）
+
+（ii）memory pool 使用第一级配置器（malloc()）分配而来，如果内存不足，转调第一级配置器。
+
+2. 所有 SGI STL 容器都使用的接口：
+
+```cpp
+template<class T, class Alloc>
+class simple_alloc{
+public:
+  static T* allocate(size_ n){
+    return 0 == n ? 0 : (T*)Alloc::allocate(n * sizeof(T));
+  }
+  static T* allocate(void){
+    return (T*)Alloc::allocate(sizeof(T));
+  }
+  static void deallocate(T *p, size_t n){
+    if(0 != n) Alloc::deallocate(p, n * sizeof(T));
+  }
+  static void deallocate(T *p){
+    Alloc::deallocate(p, sizeof(T));
+  }
+}
+```
+
+例子1，vector 内部：
+
+```cpp
+template<class T, class Alloc = alloc>
+class vector{
+protected:
+  typedef simple_alloc<value_type, Alloc> data_allocator;
+
+  data_allocator::allocate(n); // 配置 n 个元素
+  // 配置完成后，接下来必须设置初始值
+
+  void deallocate(){
+    if(...)
+      data_allocator::deallocate(start, end_of_storage - start);
+  }
+  ...
+}
+```
+
+例子2，deque 内部：
+
+```cpp
+template<class T, class Alloc = alloc, size_t BufSiz = 0>
+class deque{
+  typedef simple_alloc<T, Alloc> data_allocator;
+  typedef simple_alloc<T*, Alloc> map_allocator;
+  data_allocator::allocate(n); // 配置 n 个元素
+  map_allocator::allocate(n); // 配置 n 个节点
+  // 配置完成后，接下来必须设定初值
+  ...
+}
+```
+
+#### 2. 第一级配置器 __malloc_alloc_template
+
+关于返回函数指针 set_new_handler 函数，参考：https://blog.csdn.net/charles1e/article/details/51620673
+
+```cpp
+template<int inst>
+class __malloc_alloc_template{
+private:
+  // 以下都是函数指针，用来处理内存不足的情况
+  static void* oom_malloc(size_t);
+  static void* oom_realloc(void*, size_t);
+  static void (*__malloc_alloc_oom_handler)();
+
+public:
+  static void* allocate(size_t n){
+    void *result = malloc(n);
+    if(0 == result) result = oom_malloc(n);
+    return result;
+  }
+  static void deallocate(void *p, size_t /* n */){
+    free(p);
+  }
+  static void *reallocate(void *p, size_t /* old_sz */, size_t new_sz){
+    void *result = realloc(p, new_sz);
+    if(0 == result) result = oom_realloc(p, new_sz);
+    return result;
+  }
+  // 以下仿真 C++ 的 set_new_handler，也可以定制自己的 out-of-memory set_new_handler
+  static void (* set_new_handler(void (*f)()))(){
+    void (*old)() = __malloc_alloc_oom_handler;
+    __malloc_alloc_oom_handler = f;
+    return (old);
+  }
+};
+
+// 初始值为 0，等待用户设定，这也是用户的责任！！！
+template<int inst>
+void (*__malloc_alloc_template<inst>::__malloc_alloc_oom_handler)() = 0; // 函数指针赋 0
+
+template<int inst>
+void* __malloc_alloc_template<inst>::oom_malloc(size_t n){
+  void (*my_malloc_handler)();
+  void *result;
+
+  for(;;){ // 不断尝试释放、配置、再释放、再配置
+    my_malloc_handler = __malloc_alloc_oom_handler;
+    if(0 == my_malloc_handler){ __THROW_BAD_ALLOC; }
+    (*my_malloc_handler)(); // 调用处理程序，试图释放其他内存，腾出空间
+    result = malloc(n); // 再次尝试配置
+    if(result) return (result);
+  }
+}
+
+template<int inst>
+void* __malloc_alloc_template<inst>::oom_realloc(void *p, size_t n){
+  void (*my_malloc_handler)();
+  void *result;
+
+  for(;;){
+    my_malloc_handler = __malloc_alloc_oom_handler;
+    if(0 == my_malloc_handler){ __THROW_BAD_ALLOC; }
+    (*my_malloc_handler)();
+    result = realloc(p, n);
+    if(result) return (result);
+  }
+}
+
+typedef __malloc_alloc_template<0> malloc_alloc;
+```
+
+#### 3. 第二级配置器 __default_alloc_template
+
+小块内存带来的不仅仅是内存碎片的问题，还有配置时额外的负担（overhead）
+
+free-list 的节点结构
+```cpp
+union obj{
+  union obj *free_list_link;
+  char client_data[1];
+}
+```
+第二级分配器部分实现：
+```cpp
+enum {__ALIGN = 8}; // 小块内存对齐
+enum {__MAX_BYTES = 128}; // 小块内存上界
+enum {__NFREELISTS = __MAX_BYTES / __ALIGN}; // free-lists 的个数
+
+// 第一个模板参数用于多线程环境，这里不讨论
+template<bool threads, int inst>
+class __default_alloc_template{
+private:
+  static size_t ROUND_UP(size_t bytes){
+    return ((bytes) + __ALIGN-1) & ~(__ALIGN - 1));
+  }
+private:
+  union obj{
+    union obj *free_list_link;
+    char client_data[1];
+  }
+private:
+  // 16 个 free-lists
+  static obj *volatile free_list[__NFREELISTS];
+  // 计算该用哪个 free-lists
+  static size_t FREELIST_INDEX(size_t bytes){
+    return (((bytes) + __ALIGN - 1) / __ALIGN - 1);
+  }
+  static void* refill(size_t n);
+  static char* chunk_alloc(size_t size, int &nobjs); // 配置 nobjs 个 size 的区块
+
+  static char *start_free; // 内存次起始位置
+  static char *end_free; // 内存池结束位置
+  static size_t heap_size;
+public:
+  static void* allocate(size_t n);
+  static void deallocate(void *p, size_t n);
+  static void* reallocate(void *p, size_t old_sz, size_t new_sz);
+}
+//
+template<bool threads, int inst>
+char* __default_alloc_template<threads, inst>::start_free = 0;
+//
+template<bool threads, int inst>
+char* __default_alloc_template<threads, inst>::end_free = 0;
+//
+template<bool threads, int inst>
+size_t __default_alloc_template<threads, inst>::heap_size = 0;
+//
+template<bool threads, int inst>
+__default_alloc_template<threads, inst>::obj * volatile
+__default_alloc_template<threads, inst>::free_list[__NFREELISTS] =
+{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+//
+//
+template<bool threads, int inst>
+void* __default_alloc_template<threads, inst>::allocate(size_t n){
+  obj * volatile *my_free_list; // 指针数组的指针
+  obj *result;
+  if(n > (size_t)__MAX_BYTES){
+    return (malloc_alloc::allocate(n));
+  }
+  // 寻找最合适的 free-list
+  my_free_list = free_list + FREELIST_INDEX(n);
+  result = *my_free_list;
+  if(result == 0){
+    void *r = refill(ROUND_UP(n));
+    return r;
+  }
+  // 调整 free-list
+  *my_free_list = result -> free_list_link;
+  return (result);
+}
+//
+template<bool threads, int inst>
+void* __default_alloc_template<threads, inst>::deallocate(void *p, size_t n){
+  obj *q = (obj *)p;
+  obj * volatile * my_free_list;
+  if(n > (size_t)__MAX_BYTES){
+    malloc_alloc::dealocate(p, n);
+    return;
+  }
+  my_free_list = free_list + FREELIST_INDEX(n);
+  // 调整 free list，回收内存块
+  q -> free_list_link = *my_free_list;
+  *my_free_list = q;
+}
+//
+template<bool threads, int inst>
+void* __default_alloc_template<threads, inst>::refill(size_t n){
+  int nobjs = 20;
+  // 调用 chunk_alloc()，尝试取得 nobjs 个区块作为 free list 的新节点
+  char *chunk = chunk_alloc(n, objs);
+  obj * volatile * my_free_list;
+  obj *result;
+  obj *current_obj, *next_obj;
+  int i;
+  // 如果只获得一个区块，则直接返回给调用者
+  if(1 == nobjs) return (chunk);
+  // 否则准备调整 free-lists，纳入新节点
+  my_free_list = free_list + FREELIST_INDEX(n);
+  result = (obj *)chunk; // 这一块返回给用户
+  // 其他的放 free-list
+  *my_free_list = next_obj = (obj *)(chunk + n);
+  for(i = 1; ; i++){
+    current_obj = next_obj;
+    next_obj = (obj *)((char *)next_obj + n);
+    if(nobjs - 1 == i){
+      current_obj -> free_list_link = 0;
+      break;
+    }else{
+      current_obj -> free_list_link = next_obj;
+    }
+  }
+  return (result);
+}
+//
+// 从内存池中取空间给 free-lists 用
+template<bool threads, int inst>
+char* __default_alloc_template<threads, inst>::
+chunk_alloc(size_t size, int &nobjs){
+  char *result;
+  size_t total_bytes = size * nobjs;
+  size_t bytes_left = end_free - start_free; // 内存池中的剩余空间
+  if(bytes_left >= total_bytes){
+    // 满足需求
+    result = start_free;
+    start_free += total_bytes;
+    return (result);
+  }
+  else if(bytes_left >= size){
+    // 内存池剩余空间不能完全满足需求，但可以提供几个 size 大小的内存块
+    nobjs = bytes_left / size;
+    total_bytes = size * nobjs;
+    result = start_free;
+    start_free += total_bytes;
+    return (result);
+  }
+  else{
+    // 我内存池很穷啊，来点内存！
+    size_t bytes_to_get = 2 * total_bytes + ROUND_UP(heap_size >> 4);
+    if(bytes_left > 0){
+      // 我还有一点剩下的啊！
+      // 分配给适当的 free-list，这下内存池彻底没货了...
+      obj * volatile * my_free_list = free_list + FREELIST_INDEX(bytes_left);
+      ((obj *)start_free) -> free_list_link = *my_free_list;
+      *my_free_list = (obj *)start_free;
+    }
+    // 配置 heap 空间，用来补充我内存池！
+    start_free = (char *)malloc(bytes_to_get);
+    if(0 == start_free){
+      // heap 空间不足了啊！
+      int i;
+      obj * volatile * my_free_list, *p;
+      // 哎，没办法了，看看手上还有啥吧！
+      // 搜寻下 free-lists！
+      for(i = size; i <= __MAX_BYTES; i += __ALIGN){
+        my_free_list = free_list + FREELIST_INDEX(i);
+        p = *my_free_list;
+        if(0 != p){
+          // 这个 free-list 里还有货啊，搞出来！
+          *my_free_list = p -> free_list_link;
+          start_free = (char *)p; // 未分配的用 char
+          end_free = start_free + i;
+          // 递归调用自己，为了修正 nobjs
+          return (chunk_alloc(size, nobjs));
+        }
+      }
+      end_free = 0; // 山穷水尽！
+      // 第一级配置器，out-of-memory 能不能搞点事啊？!
+      start_free = (char *)malloc_alloc::allocate(bytes_to_get);
+      // 如果还失败就抛出异常了
+    }
+    // heap 空间有啊！good
+    heap_size += bytes_to_get;
+    end_free = start_free + bytes_to_get;
+    // 递归调用自己，为了修正 nobjs
+    return (chunk_alloc(size, nobjs));
+  }
+}
+```
+
+## Q69：volatile 修饰符
+
+参考1：https://www.cnblogs.com/god-of-death/p/7852394.html
+
+总结特性：
+
+1. 易变性：每次读取 volatile 变量将从内存中读取，而不是寄存器。
+
+2. 不可优化性：volatile告诉编译器，不要对我这个变量进行各种激进的优化，甚至将变量直接消除（替换）。并且保证 volatile 变量之间的顺序，不会被编译器交换。
+
+Plus：Volatile变量与非Volatile变量的顺序，编译器不保证顺序，可能会进行乱序优化。这里可以考虑使用锁机制来保证顺序。
+
+## Q70：强类型、弱类型语言
+
+弱类型语言允许将一块内存看做多种类型。比如直接将整型变量与字符变量相加。C and C++ 是静态语言，也是弱类型语言；Perl and PHP 是动态语言，但也是弱类型语言。
+
+强类型语言在没有强制类型转化前，不允许两种不同类型的变量相互操作。Java、C# 和 Python 等都是强类型语言。
+
+使用哪种语言还是要按需而定。编写简单小应用，使用弱类型语言可节省很多代码量，有更高的开发效率。而对于构建大型项目，使用强类型语言可能会比使用弱类型更加规范可靠。

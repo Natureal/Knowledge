@@ -241,7 +241,7 @@ HTTPS = HTTP + SSL（Secure Sockets Layer 安全套接层）
 
 （3）HTTPS 协议需要服务端申请证书，浏览器端安装对应的根证书。
 
-（4）HTTP 协议端口时 80，HTTPS 协议端口是 443。
+（4）HTTP 协议端口时 80，**HTTPS 协议端口是 443**。
 
 2. **HTTPS概览**
 
@@ -709,6 +709,10 @@ MIME类型由两个部分组成：（1）数据的大类别 （2）具体的种�
 7、证书所有人的公开密钥；
 
 8、证书发行者对证书的签名。
+
+## Q：RPC 服务
+
+RPC（Remote Procedure Call），即：远程过程调用，
 
 ## Q：Apache、Nginx、Tomcat
 

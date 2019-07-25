@@ -509,13 +509,17 @@ union thread_union
 
 1. ID 种类
 
-（1）**pid**：进程 ID。
+（1）**pid**：进程 ID，可用 getpid()。
 
-（2）**lwp**（light-weight process）：线程 ID，可用 ps -aL 查看。
+（2）**tgid**：线程组 ID，等于 pid，为线程组 leader 线程的 pid。
 
-（3）**tid**：等于 lwp，在系统接口函数中常用，如 syscall(SYS_gettid)、syscall(_NR_gettid)。
+---
 
-（4）**tgid**：线程组 ID，等于 pid，为线程组 leader 线程的 pid。
+（3）**lwp**（light-weight process）：线程 ID，可用 ps -aL 查看。
+
+（4）**tid**：等于 lwp，在系统接口函数中常用，如 syscall(SYS_gettid)、syscall(_NR_gettid)。
+
+---
 
 （5）**thread_id**：pthread_id，进程内线程的局部 ID
 
@@ -534,7 +538,7 @@ pthread_create(&thread_id_same, NULL, void (*func)(void*), NULL);
 // thread_id == thread_id_same
 ```
 
-4. 获取线程 lwp/tid
+4. 获取线程 lwp/tid，需要系统级别的视角，因此用 syscall
 
 ```cpp
 int lwp = syscall(SYS_gettid);
@@ -1184,7 +1188,7 @@ void free_page(unsigned long addr);
 （3）ZONE_HIGHMEM：动态映射的页，>896 MB
 
 
-- **kmalloc()**
+- **kmalloc() 内核级函数**
 
 在 <linux/slab.h> 中声明。
 
@@ -1199,7 +1203,7 @@ void free_page(unsigned long addr);
 void* kmalloc(size_t size, gfp_t flags);
 ```
 
-（3）kfree()：
+- **kfree() 内核级函数**
 
 ```cpp
 void kfree(const void *ptr); // 注意要释放由 kmalloc 开的内存才行
@@ -1212,7 +1216,7 @@ if(!buf){
 kfree(buf);
 ```
 
-- **vmalloc()**
+- **vmalloc() 内核级函数**
 
 （1）分配的内存虚拟地址是连续的。（物理上不一定连续）
 
@@ -1231,6 +1235,75 @@ if(!buf){
 vfree(buf);
 ```
 
+- **brk()、sbrk() 系统接口级函数/系统调用**
+
+参考1：https://blog.csdn.net/Apollon_krj/article/details/54565768
+
+brk() 和 sbrk()改变程序间断点的位置。
+
+1. 当addr参数合理、系统有足够的内存并且不超过最大值时brk()函数将数据段结尾设置为addr,即间断点设置为addr。
+
+2. sbrk()将程序数据空间增加increment字节。当increment为0时则返回程序间断点的当前位置。
+
+```cpp
+#include <unistd.h>
+int brk(void * addr);
+void * sbrk(intptr_t increment);
+```
+
+- **mmap() 系统接口级函数/系统调用**
+
+mmap将一个文件或者其它对象映射进内存。
+
+```cpp
+#incldue <sys/mman.h>
+void * mmap(void * addr, size_t length,int prot,int flags,int fd,off_t offset);
+```
+
+综合性的例子：
+```cpp
+#include <stdio.h>
+#include <sys/mman.h>
+#include <unistd.h>
+#include <stdlib.h>
+
+int main(){
+	int *p0 = (int*)sbrk(0);
+	int *p1 = (int*)malloc(500);
+	int *p2 = (int*)mmap(NULL, 30, PROT_WRITE|PROT_READ, MAP_PRIVATE|MAP_ANONYMOUS, 0, 0);
+	int local = 111;
+	int *p3 = (int*)mmap(NULL, 4097, PROT_WRITE|PROT_READ, MAP_PRIVATE|MAP_ANONYMOUS, 0, 0);
+	int *p4 = (int*)mmap(NULL, 4096, PROT_WRITE|PROT_READ, MAP_PRIVATE|MAP_ANONYMOUS, 0, 0);
+	printf("brk start, p0: %p\n", p0);
+	printf("malloc 500B, p1: %p\n", p1);
+	printf("mmap 30B, p1: %p\n", p2);
+	printf("mmap 4KB, p2: %p\n", p3);
+	printf("mmap 4KB, p3: %p\n", p4);
+	printf("local address: %p\n", &local);
+	return 0;
+}
+```
+
+输出：
+
+```cpp
+brk start, p0: 0x560503896000
+malloc 500B, p1: 0x560503896260
+mmap 30B, p1: 0x7f956dc7c000
+mmap 4KB, p2: 0x7f956dc7a000
+mmap 4KB, p3: 0x7f956dc79000
+local address: 0x7ffdd4e75cec
+```
+
+我们发现 mmap 的地址在栈和 brk 之间，且从高地址向低地址扩展。最小单位为一页 4KB，当我们分配 4097 字节时，mmap 给了我们 2 页。
+
+- **munmap() 系统接口级函数/系统调用**
+
+```cpp
+int munmap(void * addr, size_t length);
+```
+
+
 - **slab层**
 
 （1）slab 分配器扮演了通用数据结构缓存层的角色。
@@ -1241,6 +1314,7 @@ vfree(buf);
 
 （4）一般一个 slab 就一页，每个高速缓存可以有多个 slab。
 
+（5）缓存对象：task_struct、struct inode、
 
 
 ## Q：Linux 启动流程
@@ -1817,3 +1891,229 @@ BEGIN COUNT
 16	167	stacksize.c
 END, COUNT = 16
 ```
+
+## Q：Swap 交换分区
+
+参考1： https://www.cnblogs.com/yaohong/articles/7357520.html
+
+Swap分区在系统的物理内存不够用的时候，把硬盘空间中的一部分空间释放出来，以供当前运行的程序使用。那些被释放的空间可能来自一些很长时间没有什么操作的程序，这些被释放的空间被临时保存到Swap分区中，等到那些程序要运行时，再从Swap分区中恢复保存的数据到内存中。
+
+用malloc和new函数生成的对象的数据需要Swap空间，因为它们在文件系统中没有相应的“储备”文件，因此被称作“匿名”(Anonymous)内存数据。这类数据还包括堆栈中的一些状态和变量数据等。所以说，Swap空间是“匿名”数据的交换空间。
+
+## Q：glibc malloc 底层原理
+
+参考1：https://blog.csdn.net/z_ryan/article/details/79950737
+
+参考2：https://www.cnblogs.com/alisecurity/p/5520847.html
+
+malloc采用的是内存池的管理方式（ptmalloc），ptmalloc 采用边界标记法将内存划分成很多块，从而对内存的分配与回收进行管理。为了内存分配函数malloc的高效性，ptmalloc会预先向操作系统申请一块内存供用户使用，当我们申请和释放内存的时候，ptmalloc会将这些内存管理起来，并通过一些策略来判断是否将其回收给操作系统。这样做的最大好处就是，使用户申请和释放内存的时候更加高效，避免产生过多的内存碎片。4KB 对齐。
+
+**0. ptmalloc 框架概览**
+
+1. 请求分配的内存 < 128KB
+
+在主分配区利用 brk()/sbrk() 增加 heap 大小进行分配。
+
+（初始化时，即第一次调用 malloc 时，分配一块 chunk_size + 128KB 的空间作为初始 heap。）
+
+2. 请求的内存 > 128KB
+
+在非主分配区利用 mmap() 映射一块新的 sub-heap 空间。/ 或者通过 top chunk 分配。
+
+（sub-heap 初始化时，mmap 一块 1MB(32bit) 或 64MB（64bit）的空间。）
+
+**0.5 ptmalloc 流程概览**
+
+malloc：获取分配区锁 -> fast bins -> unsorted bin -> small bins -> large bins -> top chunk -> 扩容
+
+free：获取分配区锁 -> mmap -> 与 top chunk 合并? -> unsorted bin/fast bins -> 合并 -> 主分区判断收缩(free > 128KB)
+
+**0.6 pmalloc 使用注意**
+
+1. 后分配的先释放
+
+2. 不适合管理长生命周期的内存
+
+3. 不适合多线程（锁竞争、频繁分配、碎片）
+
+4. 防止耗尽系统内存
+
+**1. glibc malloc引入了显示链表技术来提高堆内存分配和释放的效率。**
+
+这些链表称为bin，是一种记录free chunk的链表数据结构。系统针对不同大小的free chunk，将bin分为了4类：1) Fast bin; 2) Unsorted bin; 3) Small bin; 4) Large bin。
+
+![](imgs/ptmalloc_bins.png)
+
+```cpp
+typedef struct malloc_chunk *mfastbinptr;
+typedef struct malloc_chunk* mchunkptr;
+
+struct malloc_state{
+  ……
+
+  /* Fastbins */
+
+  mfastbinptr fastbinsY[NFASTBINS];
+  ……
+
+  /* Normal bins packed as described above */
+
+  mchunkptr bins[NBINS * 2 - 2];  // #define NBINS    128
+  ……
+
+};
+```
+
+chunk_size 一般是用户请求 size + 16 字节（2 个指针）。
+
+(1) fast bins[10]
+
+整个 chunk_size 为 [16, 80]，10 个单链表维护（类似栈，后进先出），不会进行合并操作。
+
+第一个 fast bin 中的 chunk_size 为 16，第二个为 16+8=24，以此类推。
+
+(2) bin[0 ~ 0]: unsorted bin
+
+chunk_size 没有限制，1 个双向链表。
+
+(3) bin[1 ~ 62]: small bin
+
+chunk_size < 512B，62 个双向链表（FIFO）。
+
+第一个 bin 中 size 为 16，之后依次 +8，最后一个 16 + 61*8 = 504（不确定）
+
+需要合并操作（新的 chunk 会被加到 unsorted bin 中）。
+
+(4) bin[63 ~ 125]: large bin。
+
+chunk_size >= 512B。总共 63 个，每个 bin 中的 chunk 大小可以不一样。
+
+- 前 32 个 bin 依次以 64B (2^6) 为步长，第一个 bin 中：512 ~ 575B，第二个：576 ~ 639B。
+
+- 之后的 16 个 bin 依次以 512B (2^8) 为步长。
+
+- 之后的 8 个 bin 依次以 4096B (2^12) 为步长。
+
+- 之后的 4 个 bin 依次以 32768B (2^15) 为步长。
+
+- 之后的 2 个 bin 依次以 262144B (2^18) 为步长。
+
+- 最后一个没限制。
+
+每个 bin 中的 chunk 按照 size 从大到小排序。合并类似 small bins。
+
+---
+
+有三个例外情况，chunk 并不按照 bins 进行处理。
+
+（5）**三个例外之一 top chunk**
+
+分配区的顶部空间内存，bins 不够会用它来分配，top 不够再通过 sbrk/mmap 来扩容。
+
+（6）**三个例外之二 mmaped chunk**
+
+当分配的内存超过 128KB，需要使用 mmap 映射分配，释放时，直接交还给操作系统。
+
+（7）**三个例外之三 last remainder chunk**
+
+如果在 small bins 找不到合适的 chunk，会判断 last remainder chunk 是否合适，合适就分裂。
+
+
+**2. malloc_chunk 内存块定义**
+
+```cpp
+struct malloc_chunk {
+  /* #define INTERNAL_SIZE_T size_t */
+  INTERNAL_SIZE_T      prev_size;  /* Size of previous chunk (if free).  */
+  INTERNAL_SIZE_T      size;       /* Size in bytes, including overhead. */
+
+  struct malloc_chunk* fd;         /* 这两个指针只在free chunk中存在*/
+  struct malloc_chunk* bk;
+
+  /* Only used for large blocks: pointer to next larger size.  */
+  struct malloc_chunk* fd_nextsize; /* double links -- used only if free. */
+  struct malloc_chunk* bk_nextsize;
+};
+```
+
+使用中的 chunk：
+
+![](imgs/ptmalloc_inuse_chunk.png)
+
+空闲的 chunk：
+
+![](imgs/ptmalloc_free_chunk.png)
+
+## tcmalloc 与 jemalloc
+
+参考1：https://blog.csdn.net/junlon2006/article/details/77854898
+
+
+Glibc 使用的 ptmalloc 性能远远落后于 Google 的 tcmalloc 和 Facebook 的 jemalloc。
+
+**1. tcmalloc**
+
+Google 的开源内存管理库，引用在 chrome、safari 等中。
+
+（1) tcmalloc 为每个线程分配了一个线程本地 ThreadCache，用于分配小内存（无锁）。（不够时从中央堆 CentralCache 获取）
+
+![](imgs/tcmalloc_threadcache.png)
+
+（2）大对象从 CentralCache 中分配，4K 页面对齐。维护了一个 PageHeap。
+
+连续的页面称为 span，在 64 位系统中使用 3-level radix tree 记录 page 和 span 的映射关系。
+
+![](imgs/tcmalloc_centralcache.png)
+
+（3）In one word
+
+小内存：线程缓存 -> 中央堆 -> 中央页分配器
+
+大内存：中央堆 -> 向系统请求
+
+**优点：**
+
+(1) ThreadCache会阶段性的回收内存到CentralCache里。 解决了ptmalloc2中arena之间不能迁移的问题。
+
+(2) Tcmalloc占用更少的额外空间。例如，分配N个8字节对象可能要使用大约8N * 1.01字节的空间。即，多用百分之一的空间。Ptmalloc2使用最少8字节描述一个chunk。
+
+(3) 更快。小对象几乎无锁， >32KB的对象从CentralCache中分配使用自旋锁。 并且>32KB对象都是页面对齐分配，多线程的时候应尽量避免频繁分配，否则也会造成自旋锁的竞争和页面对齐造成的浪费。
+
+**2. jemalloc**
+
+Facebook 推出的，在 FreeBSD 中的 libc malloc、firefox、fb 服务器中应用。
+
+（1）与 tcmalloc 类似，每个线程在 < 32KB，时无锁使用线程本地 cache。
+
+（2）Jemalloc在64bits系统上使用下面的size-class分类：
+
+Small: [8], [16, 32, 48, …, 128], [192, 256, 320, …, 512], [768, 1024, 1280, …, 3840]
+
+Large: [4 KiB, 8 KiB, 12 KiB, …, 4072 KiB]
+
+Huge: [4 MiB, 8 MiB, 12 MiB, …]
+
+![](imgs/jemalloc_chunk.jpg)
+
+（3）使用 chunk 管理，大小默认是 4MB，实现常数时间分配 small 和 large 对象，log 时间查询 huge 对象的 metadata（利用红黑树）。
+
+![](imgs/jemalloc_arena.jpg)
+
+（4）使用分配区 arena 来维护 chunk。arena 包含 metadata，记录了 chunk 列表，并把 chunk 分成很多个 run，记录到 bin 中。在 bin 中，有一棵红黑树来维护空间的 run（包含 bitmap）。另外，还有两棵红黑树分别维护未分配内存（clean）和已回收内存（dirty）。
+
+（5）每次分配，都是选取最小且放得下的内存块，优先从 dirty 开始找。
+
+（6）In one word
+
+小内存（small）：线程缓存 bin -> 分配区 bin（bin加锁）-> 向系统申请
+
+大内存（large）：分配区 bin（加锁）-> 向系统申请
+
+巨内存（huge）：mmap 组织成 N 个 chunk + 全局 huge 红黑树维护（带缓存）
+
+
+**3. summary**
+
+在多线程环境使用tcmalloc和jemalloc效果非常明显。
+
+当线程数量固定，不会频繁创建退出的时候， 可以使用jemalloc；反之使用tcmalloc可能是更好的选择。
