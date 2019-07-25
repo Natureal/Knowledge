@@ -141,6 +141,8 @@
 
 [Q67.fwrite和fread缓冲区问题](#Q67)
 
+[Q67.5.SGI STL construct 和 destroy](#Q675)
+
 [Q68.SGI STL 内存池源码剖析](#Q68)
 
 [Q69.volatile 修饰符](#Q69)
@@ -2657,10 +2659,10 @@ cout << nounitbuf;    //回到正常的缓冲方式
 
 Plus 6. 当系统比较空闲的时候，会查看缓冲区的内容，如果发现有新的内容，系统就会将缓冲区的内容输出出来
 
-### Q68
-### SGI STL 内存池源码剖析
+### Q67.5
+### SGI STL construct 和 destroy
 
-#### 0. 在说内存池之前，介绍构造和析构基本工具 construct() 和 destroy()
+在说内存池之前，介绍构造和析构基本工具 construct() 和 destroy()
 
 <stl_construct.h> 部分源码:
 
@@ -2700,6 +2702,9 @@ inline void __destroy_aux(ForwardIterator, ForwardIterator, __true_type){}
 inline void destroy(char *,char *){}
 inline void destroy(wchar_t *, wchar_t *){}
 ```
+
+### Q68
+### SGI STL 内存池源码剖析
 
 #### 1. 内存池总体结构
 
