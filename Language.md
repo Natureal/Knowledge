@@ -2660,7 +2660,48 @@ Plus 6. 当系统比较空闲的时候，会查看缓冲区的内容，如果发
 ### Q68
 ### SGI STL 内存池源码剖析
 
-#### 1. 总体结构
+#### 0. 在说内存池之前，介绍构造和析构基本工具 construct() 和 destroy()
+
+<stl_construct.h> 部分源码:
+
+```cpp
+#include <new.h> // 使用 placement new
+template<class T1, class T2>
+inline void construct(T1 *p, const T2 &value){
+  new(p) T1(value); // placement new
+}
+//
+template<class T>
+inline void destroy(T* pointer){
+  pointer->~T();
+}
+//
+template<class ForwardIterator>
+inline void destroy(ForwardIterator first, ForwardIterator last){
+  __destroy(first, last, value_type(first));
+}
+//
+template<class ForwardIterator, class T>
+inline void __destroy(ForwardIterator first, ForwardIterator last, T*){
+  typedef typename __type_traits<T>::has_trivial_destructor trivial_destructor;
+  __destroy_aux(first, last, trivial_destructor());
+}
+//
+template<class ForwardIterator>
+inline void __destroy_aux(ForwardIterator first, ForwardIterator last, __false_type){
+  for(; first < last; ++first)
+    destroy(&*first);
+}
+//
+template<class ForwardIterator>
+inline void __destroy_aux(ForwardIterator, ForwardIterator, __true_type){}
+//
+// destroy 针对 char* 和 wchar_t* 的特化版
+inline void destroy(char *,char *){}
+inline void destroy(wchar_t *, wchar_t *){}
+```
+
+#### 1. 内存池总体结构
 
 1. 为了考虑小块内存的碎片问题，采用了双层级配置器结构。
 
@@ -2747,6 +2788,9 @@ class deque{
 关于返回函数指针 set_new_handler 函数，参考：https://blog.csdn.net/charles1e/article/details/51620673
 
 ```cpp
+
+typedef __malloc_alloc_template<0> malloc_alloc;
+
 template<int inst>
 class __malloc_alloc_template{
 private:
@@ -2809,7 +2853,7 @@ void* __malloc_alloc_template<inst>::oom_realloc(void *p, size_t n){
   }
 }
 
-typedef __malloc_alloc_template<0> malloc_alloc;
+
 ```
 
 #### 3. 第二级配置器 __default_alloc_template
@@ -2828,6 +2872,8 @@ union obj{
 enum {__ALIGN = 8}; // 小块内存对齐
 enum {__MAX_BYTES = 128}; // 小块内存上界
 enum {__NFREELISTS = __MAX_BYTES / __ALIGN}; // free-lists 的个数
+
+typedef __default_alloc_template<__NODE_ALLOCATOR_THREADS, 0> alloc;
 
 // 第一个模板参数用于多线程环境，这里不讨论
 template<bool threads, int inst>
@@ -2994,7 +3040,7 @@ chunk_alloc(size_t size, int &nobjs){
       // 如果还失败就抛出异常了
     }
     // heap 空间有啊！good
-    heap_size += bytes_to_get;
+    heap_size += bytes_to_get; // 随着配置次数越来越大的一个附加量
     end_free = start_free + bytes_to_get;
     // 递归调用自己，为了修正 nobjs
     return (chunk_alloc(size, nobjs));
