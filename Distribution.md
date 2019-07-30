@@ -41,9 +41,15 @@ Docker守护进程可以直接与主操作系统进行通信，为各个Docker�
 
 ## Q: Docker底层实现隔离的机制
 
+参考1：https://draveness.me/docker
+
+参考2（作者：编码前线）： https://www.jianshu.com/p/e1f7b8d5184c
+
+参考3： https://zhuanlan.zhihu.com/p/22403015
+
 - 一个正在运行的Docker容器，实际上就是启用了多个Linux Namespace的进程，而这个进程能够使用的资源量，由Cgroups配置的限制（如：CPU，内存，磁盘，网络等）。
 
-- 容器技术中非常重要的概念：容器时一个“单进程”模型。敏捷和高性能时容器比较于虚拟机最大的优势，在Paas（Platform-as-a-Service）上大行其道。但其缺点就是隔离得不彻底。
+- 容器技术中非常重要的概念：容器是一个“单进程”模型。敏捷和高性能时容器比较于虚拟机最大的优势，在Paas（Platform-as-a-Service）上大行其道。但其缺点就是隔离得不彻底。
 
 - 多个容器之间共享宿主的操作系统内核。所以不能在windows宿主上运行Linux容器，低版本的Linux宿主上也不能运行高版本的Linux容器。而且，有很多资源和对象是不能被Namespace化的，最典型的例子：时间。
 
@@ -55,41 +61,42 @@ Docker守护进程可以直接与主操作系统进行通信，为各个Docker�
 
 - fork时，容器进程创建的子进程天然继承容器的所有资源隔离。
 
-- **隔离性Summary** 
+- **隔离性Summary**
 
-参考1（作者：编码前线）： https://www.jianshu.com/p/e1f7b8d5184c
-参考2： https://zhuanlan.zhihu.com/p/22403015
+
 
 通过Namespace来进行隔离，Cgroups进行资源限制，Capability进行权限限制
 
 ### 1. Namespace隔离
 
-（1) **Mount Namespaces**
+**目的：** 同一台机器上的不同服务能做到完全隔离，就像运行在多台不同的机器上一样。
+
+（1) **挂载点隔离：Mount Namespaces**
 
 将一个文件系统的顶层目录挂到另一个文件系统的子目录（挂载点）上，成为挂载。
 
 用来隔离用户或者容器自己的文件系统。
 
-（2）**UTS（UNIX Time-sharing System namespaces）**
+（2）**域名隔离：UTS（UNIX Time-sharing System namespaces）**
 
 负责主机名与域名的隔离，让容器有自己的主机名和域名，可被看做一个独立的网络节点
 
-（3）**IPC Namespaces**
+（3）**进程间通信隔离：IPC Namespaces**
 
 负责信号量，消息队列和共享内存等的隔离。对IPC的全局ID进行隔离，使得其不会被其他Namespace内的进程看到。
 
 
-（4) **PID Namespaces**
+（4) **进程树隔离：PID Namespaces**
 
 PID Namespaces 用来隔离进程的ID空间，不同 pid namespace 里的进程ID可以重复且相互之间不影响。
 
 PID Namespaces 可以嵌套，形成树状结构，每个 namespace 只能看到其子树内的 namespaces 里的进程信息。
 
-（5) **Ｎetwork Ｎamespaces**
+（5) **网络接口隔离：Network Namespaces**
 
 每个容器用有其独立的网络设备，IP 地址，IP 路由表，/proc/net 目录，端口号等等。这也使得一个 host 上多个容器内的同一个应用都绑定到各自容器的 80 端口上。
 
-（6) **User Namespaces**
+（6) **用户隔离：User Namespaces**
 
 隔离User权限相关的Linux资源，包括user ids，group ids。
 
@@ -127,8 +134,18 @@ Linux Cgroup 可为系统中所运行任务（进程）的用户定义组群分�
 
 从Linux内核2.2版本开始，Linux支持把超级用户不同单元的权限分离，可以单独的开启和禁止，即capability的概念。可以将capability赋给普通的进程，使其可以做root用户可以做的事情。内核在验证进程是否具有某项权限时，不再验证该进程的是特权进程(有效用户ID为0)和非特权进程(有效用户ID非0)，而是验证该进程是否具有其进行该操作的capability。不合理的禁止capability，会导致应用崩溃。目前Docker默认启用一个严格capability限制权限，同时支持开发者通过命令行来改变其默认设置，保障可用性的同时又可以确保其安全。
 
-
 ## Q：Docker 镜像管理
 
+参考1: https://draveness.me/docker
 
+1. Docker 镜像其实本质就是一个压缩包
 
+2. Docker 中的每一个镜像都是由一系列只读的层组成的，Dockerfile 中的每一个命令都会在已有的只读层上创建一个新的层。
+
+3. 容器和镜像的区别就在于，所有的镜像都是只读的，而每一个容器其实等于镜像加上一个可读写的层，也就是同一个镜像可以对应多个容器。
+
+4. UnionFS 其实是一种为 Linux 操作系统设计的用于把多个文件系统『联合』到同一个挂载点的文件系统服务。而 AUFS 即 Advanced UnionFS 其实就是 UnionFS 的升级版，它能够提供更优秀的性能和效率。
+
+5. AUFS 作为联合文件系统，它能够将不同文件夹中的层联合（Union）到了同一个文件夹中，这些文件夹在 AUFS 中称作分支，整个『联合』的过程被称为联合挂载（Union Mount）：
+
+## Q：Kubernetes
