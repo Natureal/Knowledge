@@ -2117,3 +2117,62 @@ Huge: [4 MiB, 8 MiB, 12 MiB, …]
 在多线程环境使用tcmalloc和jemalloc效果非常明显。
 
 当线程数量固定，不会频繁创建退出的时候， 可以使用jemalloc；反之使用tcmalloc可能是更好的选择。
+
+
+
+### Q：线程用户栈的地址
+
+参考：https://stackoverflow.com/questions/44858528/where-are-the-stacks-for-the-other-threads-located-in-a-process-virtual-address
+
+Stack space for a new thread is created by the parent thread with mmap(MAP_ANONYMOUS|MAP_STACK). So they're in the "memory map segment", as your diagram labels it. It can end up anywhere that a large malloc() could go. (glibc malloc(3) uses mmap(MAP_ANONYMOUS) for large allocations.)
+
+总结：线程栈是进程 map 出来的
+
+**One more thing**
+
+极客精神，继续挖深！
+
+让我们通过线程创建的所有系统调用来了解线程创建的详细过程！[Raw Linux Threads via System Calls](https://nullprogram.com/blog/2015/05/15/)
+
+```cpp
+thread_create:
+    push rdi
+    call stack_create
+    lea rsi, [rax + STACK_SIZE - 8]
+    pop qword [rsi]
+    mov rdi, CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND | \
+             CLONE_PARENT | CLONE_THREAD | CLONE_IO
+    mov rax, SYS_clone
+    syscall
+    ret
+```
+
+- CLONE_THREAD: Put the new process in the same thread group.
+- CLONE_VM: Runs in the same virtual memory space.
+- CLONE_PARENT: Share a parent with the callee.
+- CLONE_SIGHAND: Share signal handlers.
+- CLONE_FS, CLONE_FILES, CLONE_IO: Share filesystem information.
+
+### Q：守护进程 (Daemon)
+
+参考1：https://github.com/linw7/Skill-Tree/blob/master/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F.md
+
+背景知识：
+
+守护进程是脱离终端并在后台运行的进程，执行过程中信息不会显示在终端上并且也不会被终端发出的信号打断。
+
+操作步骤：
+
+创建子进程，父进程退出：fork() + if(pid > 0){exit(0);}，使子进程称为孤儿进程被init进程收养。
+
+在子进程中创建新会话：setsid()。
+
+改变当前目录结构为根：chdir("/")。
+
+重设文件掩码：umask(0)。
+
+关闭文件描述符：for(int i = 0; i < 65535; ++i){close(i);}。
+
+### Q：CGI + Cookie + Session
+
+这一块 TK 巨巨讲的很好，参考：https://github.com/linw7/Skill-Tree/blob/master/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C.md

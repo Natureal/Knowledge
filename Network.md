@@ -788,10 +788,12 @@ B类：169.254.X.X（如果你的IP地址是自动获取IP地址，而你在网�
 
 1434/tcp 1434/udp：MS SQL*SERVER数据库monitor，默认的端口号为
 
-
-
 ## Q：基于 TCP 和 UDP 的应用层协议
 
 基于TCP的应用层协议有：SMTP、TELNET、HTTP、FTP
 
 基于UDP的应用层协议：DNS、TFTP（简单文件传输协议）、RIP（路由选择协议）、DHCP、BOOTP（是DHCP的前身）、IGMP（Internet组管理协议）
+
+## Q：对 CDN 的理解
+
+CDN 的全称是 Content Delivery Network，即内容分发网络。

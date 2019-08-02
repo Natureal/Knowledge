@@ -3119,3 +3119,8 @@ Plus：Volatile变量与非Volatile变量的顺序，编译器不保证顺序，
 ### C++ operator ->, ->\*, ., .\*
 
 See [stackoverflow](https://stackoverflow.com/questions/8777845/overloading-member-access-operators-c)
+
+### Q72
+### STL Preview
+
+![](imgs/STL_preview.png)
