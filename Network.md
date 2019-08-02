@@ -765,3 +765,33 @@ A类：127.X.X.X（用做循环测试）
 B类：169.254.X.X（如果你的IP地址是自动获取IP地址，而你在网络上又没有找到可用的DHCP服务器。就会得到其中一个IP)
 
 ## Q：常见的端口和对应的服务
+
+21/tcp： FTP
+
+22/tcp： SSH
+
+23/tcp： Telnet
+
+25/tcp：SMTP（Simple Mail Transfer Protocol，简单邮件传输协议）服务器所开放，主要用于发送邮件，如今绝大多数邮件服务器都使用该协议。
+
+53/udp：DNS（Domain Name Server，域名服务器）服务器所开放，主要用于域名解析。
+
+69/udp：TFTP（Trivial File Transfer Protocol）
+
+135：主要用于使用RPC（Remote Procedure Call，远程过程调用）协议并提供DCOM（分布式组件对象模型）服务。
+
+80/8080/3128/8081/9098 tcp：HTTP协议代理服务器常用端口号
+
+443/tcp  443/udp：HTTPS（securely transferring web pages）服务器，默认端口号为443/tcp  443/udp
+
+1433/tcp 1433/udp：MS SQL*SERVER数据库server，默认的端口号为
+
+1434/tcp 1434/udp：MS SQL*SERVER数据库monitor，默认的端口号为
+
+
+
+## Q：基于 TCP 和 UDP 的应用层协议
+
+基于TCP的应用层协议有：SMTP、TELNET、HTTP、FTP
+
+基于UDP的应用层协议：DNS、TFTP（简单文件传输协议）、RIP（路由选择协议）、DHCP、BOOTP（是DHCP的前身）、IGMP（Internet组管理协议）

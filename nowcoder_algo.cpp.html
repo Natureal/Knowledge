@@ -1,0 +1,1238 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<title>~/Job-hunting/nowcoder_algo.cpp.html</title>
+<meta name="Generator" content="Vim/8.0">
+<meta name="plugin-version" content="vim7.4_v2">
+<meta name="syntax" content="cpp">
+<meta name="settings" content="number_lines,use_css,pre_wrap,no_foldcolumn,expand_tabs,line_ids,prevent_copy=">
+<meta name="colorscheme" content="none">
+<style type="text/css">
+<!--
+pre { white-space: pre-wrap; font-family: monospace; color: #ffffff; background-color: #000000; }
+body { font-family: monospace; color: #ffffff; background-color: #000000; }
+* { font-size: 1em; }
+.LineNr { color: #ffff00; }
+.Constant { color: #ff40ff; }
+.Special { color: #ffd7d7; }
+.Statement { color: #ffff00; }
+.Comment { color: #00ffff; }
+.Type { color: #87ffaf; }
+-->
+</style>
+
+<script type='text/javascript'>
+<!--
+
+/* function to open any folds containing a jumped-to line before jumping to it */
+function JumpToLine()
+{
+  var lineNum;
+  lineNum = window.location.hash;
+  lineNum = lineNum.substr(1); /* strip off '#' */
+
+  if (lineNum.indexOf('L') == -1) {
+    lineNum = 'L'+lineNum;
+  }
+  lineElem = document.getElementById(lineNum);
+  /* Always jump to new location even if the line was hidden inside a fold, or
+   * we corrected the raw number to a line ID.
+   */
+  if (lineElem) {
+    lineElem.scrollIntoView(true);
+  }
+  return true;
+}
+if ('onhashchange' in window) {
+  window.onhashchange = JumpToLine;
+}
+
+-->
+</script>
+</head>
+<body onload='JumpToLine();'>
+<pre id='vimCodeElement'>
+<span id="L1" class="LineNr">   1 </span>作者：是萌萌的前辈呀
+<span id="L2" class="LineNr">   2 </span>链接：https:<span class="Comment">//www.nowcoder.com/discuss/212003?type=0&amp;order=0&amp;pos=44&amp;page=2</span>
+<span id="L3" class="LineNr">   3 </span>来源：牛客网
+<span id="L4" class="LineNr">   4 </span>
+<span id="L5" class="LineNr">   5 </span><span class="Constant">1.</span>赋值操作符（<span class="Constant">2</span>种写法）
+<span id="L6" class="LineNr">   6 </span>CMyString CMyString::<span class="Statement">operator</span>=(<span class="Type">const</span> CMyString &amp;str)
+<span id="L7" class="LineNr">   7 </span>{
+<span id="L8" class="LineNr">   8 </span>  <span class="Statement">if</span>(<span class="Statement">this</span>==&amp;str)
+<span id="L9" class="LineNr">   9 </span>  <span class="Statement">return</span> *<span class="Statement">this</span>;
+<span id="L10" class="LineNr">  10 </span>  <span class="Statement">delete</span> []m_pData;
+<span id="L11" class="LineNr">  11 </span>  m_pData=<span class="Constant">NULL</span>;
+<span id="L12" class="LineNr">  12 </span>  m_pData=<span class="Statement">new</span> <span class="Type">char</span>[strlen(str.m_pData)+<span class="Constant">1</span>];
+<span id="L13" class="LineNr">  13 </span>  strcpy(m_pData,str.m_pData);
+<span id="L14" class="LineNr">  14 </span>  <span class="Statement">return</span> *<span class="Statement">this</span>;
+<span id="L15" class="LineNr">  15 </span>}
+<span id="L16" class="LineNr">  16 </span>
+<span id="L17" class="LineNr">  17 </span>CMyString&amp; CMyString::<span class="Statement">operator</span>=(<span class="Type">const</span> CMyString &amp;str)
+<span id="L18" class="LineNr">  18 </span>{
+<span id="L19" class="LineNr">  19 </span>  <span class="Statement">if</span>(<span class="Statement">this</span>!=&amp;str)
+<span id="L20" class="LineNr">  20 </span>  {  CMyString strTemp(str);  Char* pTemp=strTemp.m_pData;  strTemp.m_pData=m_pData;  m_pData=pTemp;
+<span id="L21" class="LineNr">  21 </span>  }
+<span id="L22" class="LineNr">  22 </span>  <span class="Statement">return</span> *<span class="Statement">this</span>;
+<span id="L23" class="LineNr">  23 </span>}
+<span id="L24" class="LineNr">  24 </span>
+<span id="L25" class="LineNr">  25 </span><span class="Constant">2.</span>智能指针
+<span id="L26" class="LineNr">  26 </span>shared_ptr实现：
+<span id="L27" class="LineNr">  27 </span><span class="Type">template</span>&lt;<span class="Type">typename</span> T&gt;
+<span id="L28" class="LineNr">  28 </span><span class="Type">class</span> SmartPtr
+<span id="L29" class="LineNr">  29 </span>{
+<span id="L30" class="LineNr">  30 </span>  <span class="Statement">public</span>:
+<span id="L31" class="LineNr">  31 </span>    SmartPtr(T *p=<span class="Constant">0</span>):pointee(p),count(<span class="Statement">new</span> <span class="Type">size_t</span>(t)) {}
+<span id="L32" class="LineNr">  32 </span>    SmartPtr(<span class="Type">const</span> SmartPtr&amp; rhs):pointee(rhs.pointee),count(rhs.count)
+<span id="L33" class="LineNr">  33 </span>    {++*count;}
+<span id="L34" class="LineNr">  34 </span>    ~SmartPtr() {decr_count();}
+<span id="L35" class="LineNr">  35 </span>    SmartPtr&amp; <span class="Statement">operator</span>=(<span class="Type">const</span> SmartPtr&amp; rhs)
+<span id="L36" class="LineNr">  36 </span>    {
+<span id="L37" class="LineNr">  37 </span>      ++*rhs.count;
+<span id="L38" class="LineNr">  38 </span>      decr_count();
+<span id="L39" class="LineNr">  39 </span>      pointee=rhs.count;
+<span id="L40" class="LineNr">  40 </span>      <span class="Statement">return</span> *<span class="Statement">this</span>;
+<span id="L41" class="LineNr">  41 </span>    }
+<span id="L42" class="LineNr">  42 </span>    T* <span class="Statement">operator</span>-&gt;() {<span class="Statement">return</span> pointee;}
+<span id="L43" class="LineNr">  43 </span>    <span class="Type">const</span> T* <span class="Statement">operator</span>-&gt;() <span class="Type">const</span> {<span class="Statement">return</span> pointee;}
+<span id="L44" class="LineNr">  44 </span>    T&amp; <span class="Statement">operator</span>*() {<span class="Statement">return</span> *pointee;}
+<span id="L45" class="LineNr">  45 </span>    <span class="Type">const</span> T&amp; <span class="Statement">operator</span>*() {<span class="Statement">return</span> *pointee;}
+<span id="L46" class="LineNr">  46 </span>    <span class="Type">size_t</span> get_refCount() {<span class="Statement">return</span> *count;}
+<span id="L47" class="LineNr">  47 </span>  <span class="Statement">private</span>:
+<span id="L48" class="LineNr">  48 </span>    T* pointee;
+<span id="L49" class="LineNr">  49 </span>    <span class="Type">size_t</span> *count;
+<span id="L50" class="LineNr">  50 </span>    <span class="Type">void</span> decr_count()
+<span id="L51" class="LineNr">  51 </span>    {
+<span id="L52" class="LineNr">  52 </span>      <span class="Statement">if</span>(--*count==<span class="Constant">0</span>)
+<span id="L53" class="LineNr">  53 </span>      {
+<span id="L54" class="LineNr">  54 </span>        <span class="Statement">delete</span> pointee;
+<span id="L55" class="LineNr">  55 </span>        <span class="Statement">delete</span> count;
+<span id="L56" class="LineNr">  56 </span>      }
+<span id="L57" class="LineNr">  57 </span>    }
+<span id="L58" class="LineNr">  58 </span>};
+<span id="L59" class="LineNr">  59 </span>
+<span id="L60" class="LineNr">  60 </span>auto_ptr实现：
+<span id="L61" class="LineNr">  61 </span><span class="Type">template</span>&lt;<span class="Type">class</span> T&gt;
+<span id="L62" class="LineNr">  62 </span><span class="Type">class</span> auto_ptr
+<span id="L63" class="LineNr">  63 </span>{
+<span id="L64" class="LineNr">  64 </span><span class="Statement">public</span>:
+<span id="L65" class="LineNr">  65 </span>    <span class="Type">explicit</span> auto_ptr(T *p = <span class="Constant">0</span>): pointee(p) {}
+<span id="L66" class="LineNr">  66 </span>    auto_ptr(auto_ptr&lt;T&gt;&amp; rhs): pointee(rhs.release()) {}
+<span id="L67" class="LineNr">  67 </span>    ~auto_ptr() { <span class="Statement">delete</span> pointee; }
+<span id="L68" class="LineNr">  68 </span>    auto_ptr&lt;T&gt;&amp; <span class="Statement">operator</span>=(auto_ptr&lt;T&gt;&amp; rhs)
+<span id="L69" class="LineNr">  69 </span>    {
+<span id="L70" class="LineNr">  70 </span>        <span class="Statement">if</span> (<span class="Statement">this</span> != &amp;rhs) reset(rhs.release());
+<span id="L71" class="LineNr">  71 </span>        <span class="Statement">return</span> *<span class="Statement">this</span>;
+<span id="L72" class="LineNr">  72 </span>    }
+<span id="L73" class="LineNr">  73 </span>    T&amp; <span class="Statement">operator</span>*() <span class="Type">const</span> { <span class="Statement">return</span> *pointee; }
+<span id="L74" class="LineNr">  74 </span>    T* <span class="Statement">operator</span>-&gt;() <span class="Type">const</span> { <span class="Statement">return</span> pointee; }
+<span id="L75" class="LineNr">  75 </span>    T* get() <span class="Type">const</span> { <span class="Statement">return</span> pointee; }
+<span id="L76" class="LineNr">  76 </span>    T* release()
+<span id="L77" class="LineNr">  77 </span>    {
+<span id="L78" class="LineNr">  78 </span>        T *oldPointee = pointee;
+<span id="L79" class="LineNr">  79 </span>        pointee = <span class="Constant">0</span>;
+<span id="L80" class="LineNr">  80 </span>        <span class="Statement">return</span> oldPointee;
+<span id="L81" class="LineNr">  81 </span>    }
+<span id="L82" class="LineNr">  82 </span>    <span class="Type">void</span> reset(T *p = <span class="Constant">0</span>)
+<span id="L83" class="LineNr">  83 </span>    {
+<span id="L84" class="LineNr">  84 </span>        <span class="Statement">if</span>(pointee != p)
+<span id="L85" class="LineNr">  85 </span>        {
+<span id="L86" class="LineNr">  86 </span>          <span class="Statement">delete</span> pointee;
+<span id="L87" class="LineNr">  87 </span>          pointee = p;
+<span id="L88" class="LineNr">  88 </span>        }
+<span id="L89" class="LineNr">  89 </span>    }
+<span id="L90" class="LineNr">  90 </span><span class="Statement">private</span>:
+<span id="L91" class="LineNr">  91 </span>    T *pointee;
+<span id="L92" class="LineNr">  92 </span>};
+<span id="L93" class="LineNr">  93 </span>
+<span id="L94" class="LineNr">  94 </span><span class="Constant">3.</span>strcpy/memmove/memcpy
+<span id="L95" class="LineNr">  95 </span><span class="Type">void</span> *memmove(<span class="Type">void</span>* dis,<span class="Type">const</span> <span class="Type">void</span>* src,<span class="Type">size_t</span> n)
+<span id="L96" class="LineNr">  96 </span>{
+<span id="L97" class="LineNr">  97 </span>  assert(dst!=<span class="Constant">NULL</span>&amp;&amp;src!=<span class="Constant">NULL</span>);
+<span id="L98" class="LineNr">  98 </span>  <span class="Type">char</span>* p=(<span class="Type">char</span>*) dst;
+<span id="L99" class="LineNr">  99 </span>  <span class="Type">const</span> <span class="Type">char</span>* s=(<span class="Type">const</span> <span class="Type">char</span>*) src;
+<span id="L100" class="LineNr"> 100 </span>  <span class="Statement">if</span>(p&gt;=s&amp;&amp;p&lt;=s+n)
+<span id="L101" class="LineNr"> 101 </span>  {
+<span id="L102" class="LineNr"> 102 </span>    p=p+n-<span class="Constant">1</span>;
+<span id="L103" class="LineNr"> 103 </span>    s=s+n-<span class="Constant">1</span>;
+<span id="L104" class="LineNr"> 104 </span>    <span class="Statement">while</span>(n--)
+<span id="L105" class="LineNr"> 105 </span>      *p--=*s--;
+<span id="L106" class="LineNr"> 106 </span>  }
+<span id="L107" class="LineNr"> 107 </span>  <span class="Statement">else</span>
+<span id="L108" class="LineNr"> 108 </span>  {
+<span id="L109" class="LineNr"> 109 </span>    <span class="Statement">while</span>(n--)
+<span id="L110" class="LineNr"> 110 </span>      *p++=*s++;
+<span id="L111" class="LineNr"> 111 </span>  }
+<span id="L112" class="LineNr"> 112 </span>  <span class="Statement">return</span> dst;
+<span id="L113" class="LineNr"> 113 </span>}
+<span id="L114" class="LineNr"> 114 </span>
+<span id="L115" class="LineNr"> 115 </span><span class="Type">void</span>* memcpy(<span class="Type">void</span>* dst,<span class="Type">const</span> <span class="Type">void</span>* src,<span class="Type">size_t</span> n); <span class="Comment">//不处理内存折叠</span>
+<span id="L116" class="LineNr"> 116 </span>
+<span id="L117" class="LineNr"> 117 </span><span class="Constant">4.</span>strcat
+<span id="L118" class="LineNr"> 118 </span><span class="Type">char</span>* strcat(<span class="Type">char</span>* dst, <span class="Type">const</span> <span class="Type">char</span>* src)
+<span id="L119" class="LineNr"> 119 </span>{
+<span id="L120" class="LineNr"> 120 </span>    <span class="Type">char</span>* ret = dst;
+<span id="L121" class="LineNr"> 121 </span>    <span class="Statement">while</span>(*dst != <span class="Special">'\0'</span>)
+<span id="L122" class="LineNr"> 122 </span>        ++dst;
+<span id="L123" class="LineNr"> 123 </span>    <span class="Statement">while</span>((*dst++ = *src++) != <span class="Special">'\0'</span>);
+<span id="L124" class="LineNr"> 124 </span>    <span class="Statement">return</span> ret;
+<span id="L125" class="LineNr"> 125 </span>}
+<span id="L126" class="LineNr"> 126 </span>
+<span id="L127" class="LineNr"> 127 </span><span class="Constant">5.</span>strcmp
+<span id="L128" class="LineNr"> 128 </span><span class="Type">int</span> strcmp(<span class="Type">const</span> <span class="Type">char</span>* str1, <span class="Type">const</span> <span class="Type">char</span>* str2)
+<span id="L129" class="LineNr"> 129 </span>{
+<span id="L130" class="LineNr"> 130 </span>    <span class="Statement">while</span>(*str1 == *str2 &amp;&amp; *str1 != <span class="Special">'\0'</span>)
+<span id="L131" class="LineNr"> 131 </span>    {
+<span id="L132" class="LineNr"> 132 </span>        ++str1;
+<span id="L133" class="LineNr"> 133 </span>        ++str2;
+<span id="L134" class="LineNr"> 134 </span>    }
+<span id="L135" class="LineNr"> 135 </span>    <span class="Statement">return</span> *str1 - *str2;
+<span id="L136" class="LineNr"> 136 </span>}
+<span id="L137" class="LineNr"> 137 </span>
+<span id="L138" class="LineNr"> 138 </span><span class="Constant">6.</span>单例模式
+<span id="L139" class="LineNr"> 139 </span><span class="Type">class</span> singleton
+<span id="L140" class="LineNr"> 140 </span>{
+<span id="L141" class="LineNr"> 141 </span>  <span class="Statement">public</span>:
+<span id="L142" class="LineNr"> 142 </span>    <span class="Type">static</span> singleton* getInstance();
+<span id="L143" class="LineNr"> 143 </span>  <span class="Statement">private</span>:
+<span id="L144" class="LineNr"> 144 </span>    singleton() {}
+<span id="L145" class="LineNr"> 145 </span>    <span class="Type">static</span> singleton* instance;
+<span id="L146" class="LineNr"> 146 </span>};
+<span id="L147" class="LineNr"> 147 </span>singleton* singleton::instance=<span class="Statement">new</span> singleton;
+<span id="L148" class="LineNr"> 148 </span>singleton* singleton::getInstance()
+<span id="L149" class="LineNr"> 149 </span>{
+<span id="L150" class="LineNr"> 150 </span>  <span class="Statement">return</span> instance;
+<span id="L151" class="LineNr"> 151 </span>}
+<span id="L152" class="LineNr"> 152 </span>
+<span id="L153" class="LineNr"> 153 </span><span class="Constant">7.</span>堆排序
+<span id="L154" class="LineNr"> 154 </span><span class="Type">void</span> heapAdjust(<span class="Type">int</span> R[],<span class="Type">int</span> l,<span class="Type">int</span> h)
+<span id="L155" class="LineNr"> 155 </span>{  <span class="Type">int</span> i=l;  <span class="Type">int</span> j=<span class="Constant">2</span>*i;  <span class="Type">int</span> temp=R[i];  <span class="Statement">while</span>(j&lt;=h)  {  <span class="Statement">if</span>(j&lt;h&amp;&amp;R[j]&lt;R[j+<span class="Constant">1</span>])
+<span id="L156" class="LineNr"> 156 </span>        j++;  <span class="Statement">if</span>(temp&lt;R[j])  {  R[i]=R[j];  i=j;  j=<span class="Constant">2</span>*i;
+<span id="L157" class="LineNr"> 157 </span>      }
+<span id="L158" class="LineNr"> 158 </span>      <span class="Statement">else</span>
+<span id="L159" class="LineNr"> 159 </span>       <span class="Statement">break</span>;
+<span id="L160" class="LineNr"> 160 </span>  }
+<span id="L161" class="LineNr"> 161 </span>  R[i]=temp;
+<span id="L162" class="LineNr"> 162 </span>}
+<span id="L163" class="LineNr"> 163 </span>
+<span id="L164" class="LineNr"> 164 </span><span class="Type">void</span> heapSort(<span class="Type">int</span> R[],<span class="Type">int</span> n)
+<span id="L165" class="LineNr"> 165 </span>{  <span class="Statement">for</span>(<span class="Type">int</span> i=n/<span class="Constant">2</span>-<span class="Constant">1</span>;i&gt;=<span class="Constant">0</span>;i--)  heapAdjust(R,i,n-<span class="Constant">1</span>);   <span class="Comment">//初始建堆  for(int j=n-1;j&gt;=1;j--)  {  swap(R[1],R[j]);  heapAdjust(R,0,j-1)</span>
+<span id="L166" class="LineNr"> 166 </span>  }
+<span id="L167" class="LineNr"> 167 </span>}
+<span id="L168" class="LineNr"> 168 </span>
+<span id="L169" class="LineNr"> 169 </span><span class="Constant">8.</span>快排
+<span id="L170" class="LineNr"> 170 </span><span class="Type">int</span> partition(<span class="Type">int</span> R[],<span class="Type">int</span> l,<span class="Type">int</span> r)
+<span id="L171" class="LineNr"> 171 </span>{  <span class="Type">int</span> tmp=R[l];  <span class="Type">int</span> i,j;  i=l,j=r;  <span class="Statement">while</span>(i&lt;j)  {  While(R[j]&gt;tmp&amp;&amp;j&gt;i) j--;  R[i]=R[j];  While(R[i]&lt;tmp&amp;&amp;i&lt;j) i++;  R[j]=R[i];  }  R[i]=tmp;  <span class="Statement">return</span> i;
+<span id="L172" class="LineNr"> 172 </span>}
+<span id="L173" class="LineNr"> 173 </span>递归：
+<span id="L174" class="LineNr"> 174 </span><span class="Type">void</span> quickSort(<span class="Type">int</span> R[],<span class="Type">int</span> l,<span class="Type">int</span> r)
+<span id="L175" class="LineNr"> 175 </span>{
+<span id="L176" class="LineNr"> 176 </span>  <span class="Statement">if</span>(l&lt;r)
+<span id="L177" class="LineNr"> 177 </span>  {
+<span id="L178" class="LineNr"> 178 </span>    <span class="Type">int</span> mid=partition(R,l,r);
+<span id="L179" class="LineNr"> 179 </span>    quickSort(R,l,mid-<span class="Constant">1</span>);
+<span id="L180" class="LineNr"> 180 </span>    quickSort(R,mid+<span class="Constant">1</span>,r);
+<span id="L181" class="LineNr"> 181 </span>  }
+<span id="L182" class="LineNr"> 182 </span>}
+<span id="L183" class="LineNr"> 183 </span>
+<span id="L184" class="LineNr"> 184 </span>非递归：
+<span id="L185" class="LineNr"> 185 </span><span class="Type">void</span> quickSort(<span class="Type">int</span> R[],<span class="Type">int</span> l,<span class="Type">int</span> r)
+<span id="L186" class="LineNr"> 186 </span>{  stack&lt;<span class="Type">int</span>&gt; st;  <span class="Statement">if</span>(l&lt;r)  {  <span class="Type">int</span> mid=partition(R,l,r);  <span class="Statement">if</span>(mid-<span class="Constant">1</span>&gt;l)  {  st.push(l);  st.push(mid-<span class="Constant">1</span>);
+<span id="L187" class="LineNr"> 187 </span>    }
+<span id="L188" class="LineNr"> 188 </span>    <span class="Statement">if</span>(mid+<span class="Constant">1</span>&lt;r)
+<span id="L189" class="LineNr"> 189 </span>    {  st.push(mid+<span class="Constant">1</span>);  st.push(r);
+<span id="L190" class="LineNr"> 190 </span>    }
+<span id="L191" class="LineNr"> 191 </span>    <span class="Statement">while</span>(!st.empty())
+<span id="L192" class="LineNr"> 192 </span>    {  <span class="Type">int</span> end=st.top();st.pop();  <span class="Type">int</span> start=st.top();st.pop();  <span class="Type">int</span> kmid=partition(R,start,end);  <span class="Statement">if</span>(kmid-<span class="Constant">1</span>&gt;start)  {  st.push(start);  st.push(kmid-<span class="Constant">1</span>);
+<span id="L193" class="LineNr"> 193 </span>      }
+<span id="L194" class="LineNr"> 194 </span>      <span class="Statement">if</span>(kmid+<span class="Constant">1</span>&lt;end)
+<span id="L195" class="LineNr"> 195 </span>      {  s.push(kmid+<span class="Constant">1</span>);  s.push(end);
+<span id="L196" class="LineNr"> 196 </span>      }
+<span id="L197" class="LineNr"> 197 </span>    }
+<span id="L198" class="LineNr"> 198 </span>  }
+<span id="L199" class="LineNr"> 199 </span>}
+<span id="L200" class="LineNr"> 200 </span>
+<span id="L201" class="LineNr"> 201 </span><span class="Constant">9.</span>Top K
+<span id="L202" class="LineNr"> 202 </span><span class="Type">void</span> findk(<span class="Type">int</span> R[],<span class="Type">int</span> l,<span class="Type">int</span> h,<span class="Type">int</span> k)
+<span id="L203" class="LineNr"> 203 </span>{
+<span id="L204" class="LineNr"> 204 </span>  <span class="Type">int</span> p=partition(R,l,h);
+<span id="L205" class="LineNr"> 205 </span>  <span class="Statement">if</span>(p==k-<span class="Constant">1</span>)
+<span id="L206" class="LineNr"> 206 </span>  {
+<span id="L207" class="LineNr"> 207 </span>    <span class="Statement">for</span>(<span class="Type">int</span> i=<span class="Constant">0</span>;i&lt;k;i++)
+<span id="L208" class="LineNr"> 208 </span>      cout&lt;&lt;R[i]&lt;&lt;<span class="Constant">&quot; &quot;</span>;
+<span id="L209" class="LineNr"> 209 </span>  }
+<span id="L210" class="LineNr"> 210 </span>  <span class="Statement">else</span> <span class="Statement">if</span>(p&gt;k-<span class="Constant">1</span>)
+<span id="L211" class="LineNr"> 211 </span>    findk(R,l,p-<span class="Constant">1</span>,k);
+<span id="L212" class="LineNr"> 212 </span>  <span class="Statement">else</span>
+<span id="L213" class="LineNr"> 213 </span>    findk(R,p+<span class="Constant">1</span>,h,k);
+<span id="L214" class="LineNr"> 214 </span>}
+<span id="L215" class="LineNr"> 215 </span>
+<span id="L216" class="LineNr"> 216 </span><span class="Constant">10.</span>二路归并
+<span id="L217" class="LineNr"> 217 </span><span class="Type">void</span> merge(vector&lt;<span class="Type">int</span>&gt;&amp;nums,<span class="Type">int</span> l1,<span class="Type">int</span> r1,<span class="Type">int</span> l2,<span class="Type">int</span> r2)
+<span id="L218" class="LineNr"> 218 </span>{  <span class="Type">int</span> i=l1;  <span class="Type">int</span> j=l2;  <span class="Type">int</span> n=(r1-l1+<span class="Constant">1</span>)+(r2-l2+<span class="Constant">1</span>);  vector&lt;<span class="Type">int</span>&gt; temp(n);  <span class="Type">int</span> k=<span class="Constant">0</span>;  <span class="Statement">while</span>(i&lt;=r1&amp;&amp;j&lt;=r2)  {  <span class="Statement">if</span>(nums[i]&lt;=nums[j])  temp[k++]=nums[i++];  <span class="Statement">else</span> temp[k++]=nums[j++];
+<span id="L219" class="LineNr"> 219 </span>}
+<span id="L220" class="LineNr"> 220 </span><span class="Statement">while</span>(i&lt;=r1)
+<span id="L221" class="LineNr"> 221 </span> temp[k++]=nums[i++];
+<span id="L222" class="LineNr"> 222 </span><span class="Statement">while</span>(j&lt;=r2)
+<span id="L223" class="LineNr"> 223 </span> temp[k++]=nums[j++];
+<span id="L224" class="LineNr"> 224 </span><span class="Statement">for</span>(<span class="Type">int</span> i=<span class="Constant">0</span>;i&lt;n;i++)  nums[l1+i]=temp[i];
+<span id="L225" class="LineNr"> 225 </span>}
+<span id="L226" class="LineNr"> 226 </span><span class="Type">void</span> mergeSort(vector&lt;<span class="Type">int</span>&gt;&amp;nums,<span class="Type">int</span> start,<span class="Type">int</span> end)
+<span id="L227" class="LineNr"> 227 </span>{  <span class="Statement">if</span>(start&lt;end)  {  <span class="Type">int</span> mid=(start+end)&gt;&gt;<span class="Constant">1</span>;  mergeSort(nums,start,mid);  mergeSort(nums,mid+<span class="Constant">1</span>,end);  merge(nums,start,mid,mid+<span class="Constant">1</span>,end);
+<span id="L228" class="LineNr"> 228 </span>  }
+<span id="L229" class="LineNr"> 229 </span>}
+<span id="L230" class="LineNr"> 230 </span>
+<span id="L231" class="LineNr"> 231 </span><span class="Constant">11.</span>冒泡
+<span id="L232" class="LineNr"> 232 </span><span class="Type">void</span> BubbleSort(<span class="Type">int</span> R[],<span class="Type">int</span> n)
+<span id="L233" class="LineNr"> 233 </span>{  <span class="Type">bool</span> flag;  <span class="Statement">for</span>(<span class="Type">int</span> i=<span class="Constant">0</span>;i&lt;n-<span class="Constant">1</span>;i++)  {  flag=<span class="Constant">false</span>;  <span class="Statement">for</span>(<span class="Type">int</span> j=<span class="Constant">0</span>;j&lt;n-i-<span class="Constant">1</span>;j++)  {  <span class="Statement">if</span>(R[j]&gt;R[j+<span class="Constant">1</span>])  {  swap(R[j],R[j+<span class="Constant">1</span>]);  flag=<span class="Constant">true</span>;
+<span id="L234" class="LineNr"> 234 </span>      }
+<span id="L235" class="LineNr"> 235 </span>    }
+<span id="L236" class="LineNr"> 236 </span>    <span class="Statement">if</span>(!flag)
+<span id="L237" class="LineNr"> 237 </span>     <span class="Statement">return</span>;
+<span id="L238" class="LineNr"> 238 </span>  }
+<span id="L239" class="LineNr"> 239 </span>}
+<span id="L240" class="LineNr"> 240 </span>
+<span id="L241" class="LineNr"> 241 </span><span class="Constant">12.</span>直接选择
+<span id="L242" class="LineNr"> 242 </span><span class="Type">void</span> SelectSort(<span class="Type">int</span> R[],<span class="Type">int</span> n)
+<span id="L243" class="LineNr"> 243 </span>{  <span class="Type">int</span> k;  <span class="Statement">for</span>(<span class="Type">int</span> i=<span class="Constant">0</span>;i&lt;n;i++)  {  k=i;  <span class="Statement">for</span>(<span class="Type">int</span> j=i+<span class="Constant">1</span>;j&lt;n;j++)  {  <span class="Statement">if</span>(R[k]&gt;R[j])  k=j;
+<span id="L244" class="LineNr"> 244 </span>    }
+<span id="L245" class="LineNr"> 245 </span>  }
+<span id="L246" class="LineNr"> 246 </span>  swap(R[i],R[k]);
+<span id="L247" class="LineNr"> 247 </span>}
+<span id="L248" class="LineNr"> 248 </span>
+<span id="L249" class="LineNr"> 249 </span><span class="Constant">13.</span>有序链表合并
+<span id="L250" class="LineNr"> 250 </span>非递归：
+<span id="L251" class="LineNr"> 251 </span>Node* mergeList(Node* p1,Node* p2)
+<span id="L252" class="LineNr"> 252 </span>{
+<span id="L253" class="LineNr"> 253 </span>  Node* p=<span class="Statement">new</span> Node(<span class="Constant">0</span>);
+<span id="L254" class="LineNr"> 254 </span>  Node* ret=p;
+<span id="L255" class="LineNr"> 255 </span>  <span class="Statement">while</span>(p1&amp;&amp;p2)
+<span id="L256" class="LineNr"> 256 </span>  {
+<span id="L257" class="LineNr"> 257 </span>    <span class="Statement">if</span>(p1-&gt;val&lt;=p2-&gt;val)
+<span id="L258" class="LineNr"> 258 </span>    {
+<span id="L259" class="LineNr"> 259 </span>      p-&gt;next=p1;
+<span id="L260" class="LineNr"> 260 </span>      p1=p1-&gt;next;
+<span id="L261" class="LineNr"> 261 </span>    }
+<span id="L262" class="LineNr"> 262 </span>    <span class="Statement">else</span>
+<span id="L263" class="LineNr"> 263 </span>    {
+<span id="L264" class="LineNr"> 264 </span>      p-&gt;next=p2;
+<span id="L265" class="LineNr"> 265 </span>      p2=p2-&gt;next;
+<span id="L266" class="LineNr"> 266 </span>    }
+<span id="L267" class="LineNr"> 267 </span>    p=p-&gt;next;
+<span id="L268" class="LineNr"> 268 </span>  }
+<span id="L269" class="LineNr"> 269 </span>  <span class="Statement">if</span>(p1)
+<span id="L270" class="LineNr"> 270 </span>    p-&gt;next=p1;
+<span id="L271" class="LineNr"> 271 </span>  <span class="Statement">if</span>(p2)
+<span id="L272" class="LineNr"> 272 </span>    p-&gt;next=p2;
+<span id="L273" class="LineNr"> 273 </span>  <span class="Statement">return</span> ret-&gt;next;
+<span id="L274" class="LineNr"> 274 </span>}
+<span id="L275" class="LineNr"> 275 </span>
+<span id="L276" class="LineNr"> 276 </span>递归：
+<span id="L277" class="LineNr"> 277 </span>Node* mergeList(Node* p1,Node* p2)
+<span id="L278" class="LineNr"> 278 </span>{
+<span id="L279" class="LineNr"> 279 </span>  <span class="Statement">if</span>(p1==<span class="Constant">NULL</span>)
+<span id="L280" class="LineNr"> 280 </span>    <span class="Statement">return</span> p2;
+<span id="L281" class="LineNr"> 281 </span>  <span class="Statement">else</span> <span class="Statement">if</span>(p2==<span class="Constant">NULL</span>)
+<span id="L282" class="LineNr"> 282 </span>    <span class="Statement">return</span> p1;
+<span id="L283" class="LineNr"> 283 </span>  Node* pMergeHead=<span class="Constant">NULL</span>;
+<span id="L284" class="LineNr"> 284 </span>  <span class="Statement">if</span>(p1-&gt;val&lt;p2-&gt;val)
+<span id="L285" class="LineNr"> 285 </span>  {
+<span id="L286" class="LineNr"> 286 </span>    pMergeHead=p1;
+<span id="L287" class="LineNr"> 287 </span>    pMergeHead-&gt;next=mergeList(p1-&gt;next,p2);
+<span id="L288" class="LineNr"> 288 </span>  }
+<span id="L289" class="LineNr"> 289 </span>  <span class="Statement">else</span>
+<span id="L290" class="LineNr"> 290 </span>  {
+<span id="L291" class="LineNr"> 291 </span>    pMergeHead=p2;
+<span id="L292" class="LineNr"> 292 </span>    pMergeHead-&gt;next=mergeList(p1,p2-&gt;next);
+<span id="L293" class="LineNr"> 293 </span>  }
+<span id="L294" class="LineNr"> 294 </span>  <span class="Statement">return</span> pMergeHead;
+<span id="L295" class="LineNr"> 295 </span>}
+<span id="L296" class="LineNr"> 296 </span>
+<span id="L297" class="LineNr"> 297 </span><span class="Constant">14.</span>二叉树先序遍历（非递归版）
+<span id="L298" class="LineNr"> 298 </span>方法<span class="Constant">1</span>：
+<span id="L299" class="LineNr"> 299 </span>vector&lt;<span class="Type">int</span>&gt; preorder(TreeNode *root)
+<span id="L300" class="LineNr"> 300 </span>{   <span class="Statement">if</span>(!root)
+<span id="L301" class="LineNr"> 301 </span>            <span class="Statement">return</span> vector&lt;<span class="Type">int</span>&gt;();
+<span id="L302" class="LineNr"> 302 </span>        stack&lt;TreeNode*&gt; st;
+<span id="L303" class="LineNr"> 303 </span>        st.push(root);
+<span id="L304" class="LineNr"> 304 </span>        vector&lt;<span class="Type">int</span>&gt; ret;
+<span id="L305" class="LineNr"> 305 </span>        <span class="Statement">while</span>(st.size())
+<span id="L306" class="LineNr"> 306 </span>        {
+<span id="L307" class="LineNr"> 307 </span>            TreeNode* p=st.top();
+<span id="L308" class="LineNr"> 308 </span>            ret.push_back(p-&gt;val);
+<span id="L309" class="LineNr"> 309 </span>            st.pop();
+<span id="L310" class="LineNr"> 310 </span>            <span class="Statement">if</span>(p-&gt;right)
+<span id="L311" class="LineNr"> 311 </span>                st.push(p-&gt;right);
+<span id="L312" class="LineNr"> 312 </span>            <span class="Statement">if</span>(p-&gt;left)
+<span id="L313" class="LineNr"> 313 </span>                st.push(p-&gt;left);
+<span id="L314" class="LineNr"> 314 </span>        }
+<span id="L315" class="LineNr"> 315 </span>        <span class="Statement">return</span> ret;
+<span id="L316" class="LineNr"> 316 </span>}
+<span id="L317" class="LineNr"> 317 </span>
+<span id="L318" class="LineNr"> 318 </span>方法<span class="Constant">2</span>：
+<span id="L319" class="LineNr"> 319 </span><span class="Type">void</span> preorder(TreeNode *root)
+<span id="L320" class="LineNr"> 320 </span>{
+<span id="L321" class="LineNr"> 321 </span>    stack&lt;TreeNode*&gt; s;
+<span id="L322" class="LineNr"> 322 </span>    TreeNode *p=root;
+<span id="L323" class="LineNr"> 323 </span>    <span class="Statement">while</span>(p!=<span class="Constant">NULL</span>||!s.empty())
+<span id="L324" class="LineNr"> 324 </span>    {
+<span id="L325" class="LineNr"> 325 </span>        <span class="Statement">while</span>(p!=<span class="Constant">NULL</span>)
+<span id="L326" class="LineNr"> 326 </span>        {
+<span id="L327" class="LineNr"> 327 </span>            cout&lt;&lt;p-&gt;data&lt;&lt;<span class="Constant">&quot; &quot;</span>;
+<span id="L328" class="LineNr"> 328 </span>            s.push(p);
+<span id="L329" class="LineNr"> 329 </span>            p=p-&gt;left;
+<span id="L330" class="LineNr"> 330 </span>        }
+<span id="L331" class="LineNr"> 331 </span>        <span class="Statement">if</span>(!s.empty())
+<span id="L332" class="LineNr"> 332 </span>        {
+<span id="L333" class="LineNr"> 333 </span>            p=s.top();
+<span id="L334" class="LineNr"> 334 </span>            s.pop();
+<span id="L335" class="LineNr"> 335 </span>            p=p-&gt;right;
+<span id="L336" class="LineNr"> 336 </span>        }
+<span id="L337" class="LineNr"> 337 </span>    }
+<span id="L338" class="LineNr"> 338 </span>}
+<span id="L339" class="LineNr"> 339 </span>
+<span id="L340" class="LineNr"> 340 </span><span class="Constant">15.</span>二叉树中序遍历（非递归）
+<span id="L341" class="LineNr"> 341 </span>vector&lt;<span class="Type">int</span>&gt; inorder(TreeNode* root)
+<span id="L342" class="LineNr"> 342 </span>{  <span class="Statement">if</span> (!root)  <span class="Statement">return</span> vector&lt;<span class="Type">int</span>&gt;();  vector&lt;<span class="Type">int</span>&gt; ans;  stack&lt;TreeNode*&gt; st;  TreeNode* cur = root;  <span class="Statement">while</span> (cur || !st.empty())  {  <span class="Statement">while</span> (cur)  {  st.push(cur);  cur = cur-&gt;left;  }  <span class="Statement">if</span> (!st.empty())  {  cur = st.top();  ans.push_back(cur-&gt;val);  st.pop();  cur = cur-&gt;right;  }  }  <span class="Statement">return</span> ans;
+<span id="L343" class="LineNr"> 343 </span>}
+<span id="L344" class="LineNr"> 344 </span>
+<span id="L345" class="LineNr"> 345 </span><span class="Constant">16.</span>二叉树后序（非递归）
+<span id="L346" class="LineNr"> 346 </span>vector&lt;<span class="Type">int</span>&gt; postorder(TreeNode *root)
+<span id="L347" class="LineNr"> 347 </span>{
+<span id="L348" class="LineNr"> 348 </span>  <span class="Statement">if</span>(!root)
+<span id="L349" class="LineNr"> 349 </span>      <span class="Statement">return</span> vector&lt;<span class="Type">int</span>&gt;();
+<span id="L350" class="LineNr"> 350 </span>  vector&lt;<span class="Type">int</span>&gt; ret;
+<span id="L351" class="LineNr"> 351 </span>  stack&lt;TreeNode*&gt; st;
+<span id="L352" class="LineNr"> 352 </span>  st.push(root);
+<span id="L353" class="LineNr"> 353 </span>  <span class="Statement">while</span>(!st.empty())
+<span id="L354" class="LineNr"> 354 </span>  {
+<span id="L355" class="LineNr"> 355 </span>      TreeNode* tmp=st.top();
+<span id="L356" class="LineNr"> 356 </span>      st.pop();
+<span id="L357" class="LineNr"> 357 </span>      ret.push_back(tmp-&gt;val);
+<span id="L358" class="LineNr"> 358 </span>      <span class="Statement">if</span>(tmp-&gt;left)
+<span id="L359" class="LineNr"> 359 </span>          st.push(tmp-&gt;left);
+<span id="L360" class="LineNr"> 360 </span>      <span class="Statement">if</span>(tmp-&gt;right)
+<span id="L361" class="LineNr"> 361 </span>          st.push(tmp-&gt;right);
+<span id="L362" class="LineNr"> 362 </span>  }
+<span id="L363" class="LineNr"> 363 </span>  reverse(ret.begin(),ret.end());
+<span id="L364" class="LineNr"> 364 </span>  <span class="Statement">return</span> ret;
+<span id="L365" class="LineNr"> 365 </span>}
+<span id="L366" class="LineNr"> 366 </span>
+<span id="L367" class="LineNr"> 367 </span><span class="Constant">17.</span>二叉树层次遍历
+<span id="L368" class="LineNr"> 368 </span>vector&lt;vector&lt;<span class="Type">int</span>&gt;&gt; printLevel(TreeNode* root)
+<span id="L369" class="LineNr"> 369 </span>{
+<span id="L370" class="LineNr"> 370 </span>  <span class="Statement">if</span>(!root)
+<span id="L371" class="LineNr"> 371 </span>    <span class="Statement">return</span> vector&lt;vector&lt;<span class="Type">int</span>&gt;&gt;();
+<span id="L372" class="LineNr"> 372 </span>  vector&lt;vector&lt;<span class="Type">int</span>&gt;&gt; ans;
+<span id="L373" class="LineNr"> 373 </span>  queue&lt;TreeNode*&gt; que;
+<span id="L374" class="LineNr"> 374 </span>  que.push(root);
+<span id="L375" class="LineNr"> 375 </span>  <span class="Statement">while</span>(!que.empty())
+<span id="L376" class="LineNr"> 376 </span>  {
+<span id="L377" class="LineNr"> 377 </span>    vector&lt;<span class="Type">int</span>&gt; tmp;
+<span id="L378" class="LineNr"> 378 </span>    <span class="Type">int</span> qsize=que.size();
+<span id="L379" class="LineNr"> 379 </span>    <span class="Statement">for</span>(<span class="Type">int</span> i=<span class="Constant">0</span>;i&lt;qsize;i++)
+<span id="L380" class="LineNr"> 380 </span>    {
+<span id="L381" class="LineNr"> 381 </span>      TreeNode* p=que.front();
+<span id="L382" class="LineNr"> 382 </span>      tmp.push_back(p-&gt;val);
+<span id="L383" class="LineNr"> 383 </span>      que.pop();
+<span id="L384" class="LineNr"> 384 </span>      <span class="Statement">if</span>(p-&gt;left)
+<span id="L385" class="LineNr"> 385 </span>        que.push_back(p-&gt;left);
+<span id="L386" class="LineNr"> 386 </span>      <span class="Statement">if</span>(p-&gt;right)
+<span id="L387" class="LineNr"> 387 </span>        que.push_back(p-&gt;right);
+<span id="L388" class="LineNr"> 388 </span>    }
+<span id="L389" class="LineNr"> 389 </span>    ans.push_back(tmp);
+<span id="L390" class="LineNr"> 390 </span>  }
+<span id="L391" class="LineNr"> 391 </span>  <span class="Statement">return</span> ans;
+<span id="L392" class="LineNr"> 392 </span>}
+<span id="L393" class="LineNr"> 393 </span>
+<span id="L394" class="LineNr"> 394 </span><span class="Constant">18.</span>判读是否为同一棵树
+<span id="L395" class="LineNr"> 395 </span><span class="Type">bool</span> isEqual(TreeNode* p1,TreeNode* p2)
+<span id="L396" class="LineNr"> 396 </span>{
+<span id="L397" class="LineNr"> 397 </span>  <span class="Statement">if</span>(p1==<span class="Constant">NULL</span>&amp;&amp;p2==<span class="Constant">NULL</span>)
+<span id="L398" class="LineNr"> 398 </span>    <span class="Statement">return</span> <span class="Constant">true</span>;
+<span id="L399" class="LineNr"> 399 </span>  <span class="Statement">if</span>(p1==<span class="Constant">NULL</span>||p2==<span class="Constant">NULL</span>)
+<span id="L400" class="LineNr"> 400 </span>    <span class="Statement">return</span> <span class="Constant">false</span>;
+<span id="L401" class="LineNr"> 401 </span>  <span class="Statement">return</span> (p1-&gt;val==p2-&gt;val&amp;&amp;isEqual(p1-&gt;left,p2-&gt;left)
+<span id="L402" class="LineNr"> 402 </span>          &amp;&amp;isEqual(p1-&gt;right,p2-&gt;right));
+<span id="L403" class="LineNr"> 403 </span>}
+<span id="L404" class="LineNr"> 404 </span>
+<span id="L405" class="LineNr"> 405 </span><span class="Constant">19.</span>平衡二叉树的判断
+<span id="L406" class="LineNr"> 406 </span>方法<span class="Constant">1</span>：
+<span id="L407" class="LineNr"> 407 </span><span class="Type">int</span> getDepth(TreeNode* root)
+<span id="L408" class="LineNr"> 408 </span>{
+<span id="L409" class="LineNr"> 409 </span>  <span class="Statement">if</span>(!root)
+<span id="L410" class="LineNr"> 410 </span>    <span class="Statement">return</span> <span class="Constant">0</span>;
+<span id="L411" class="LineNr"> 411 </span>  <span class="Statement">return</span> max(getDepth(root-&gt;left),getDepth(root-&gt;right))+<span class="Constant">1</span>;
+<span id="L412" class="LineNr"> 412 </span>}
+<span id="L413" class="LineNr"> 413 </span><span class="Type">bool</span> isBlancedTree(TreeNode* root)
+<span id="L414" class="LineNr"> 414 </span>{
+<span id="L415" class="LineNr"> 415 </span>  <span class="Statement">if</span>(!root)
+<span id="L416" class="LineNr"> 416 </span>    <span class="Statement">return</span> <span class="Constant">true</span>;
+<span id="L417" class="LineNr"> 417 </span>  <span class="Type">int</span> left=getDepth(root-&gt;left);
+<span id="L418" class="LineNr"> 418 </span>  <span class="Type">int</span> right=getDepth(root-&gt;right);
+<span id="L419" class="LineNr"> 419 </span>  <span class="Statement">if</span>(abs(left-right)&gt;<span class="Constant">1</span>)
+<span id="L420" class="LineNr"> 420 </span>    <span class="Statement">return</span> <span class="Constant">false</span>;
+<span id="L421" class="LineNr"> 421 </span>  <span class="Statement">return</span> isBlancedTree(root-&gt;left)&amp;&amp;isBlancedTree(root-&gt;right);
+<span id="L422" class="LineNr"> 422 </span>}
+<span id="L423" class="LineNr"> 423 </span>
+<span id="L424" class="LineNr"> 424 </span>方法<span class="Constant">2</span>：
+<span id="L425" class="LineNr"> 425 </span><span class="Type">bool</span> isBlancedTree(TreeNode* root,<span class="Type">int</span> &amp;depth)
+<span id="L426" class="LineNr"> 426 </span>{
+<span id="L427" class="LineNr"> 427 </span>  <span class="Statement">if</span>(!root)
+<span id="L428" class="LineNr"> 428 </span>  {
+<span id="L429" class="LineNr"> 429 </span>    depth=<span class="Constant">0</span>;
+<span id="L430" class="LineNr"> 430 </span>    <span class="Statement">return</span> <span class="Constant">true</span>;
+<span id="L431" class="LineNr"> 431 </span>  }
+<span id="L432" class="LineNr"> 432 </span>  <span class="Type">int</span> left=<span class="Constant">0</span>,right=<span class="Constant">0</span>;
+<span id="L433" class="LineNr"> 433 </span>  <span class="Statement">if</span>(isBlancedTree(root-&gt;left,left)&amp;&amp;isBlancedTree(root-&gt;right,right))
+<span id="L434" class="LineNr"> 434 </span>  {
+<span id="L435" class="LineNr"> 435 </span>    <span class="Statement">if</span>(abs(left-right)&lt;=<span class="Constant">1</span>)
+<span id="L436" class="LineNr"> 436 </span>    {
+<span id="L437" class="LineNr"> 437 </span>      depth=<span class="Constant">1</span>+max(left,right);
+<span id="L438" class="LineNr"> 438 </span>      <span class="Statement">return</span> <span class="Constant">true</span>;
+<span id="L439" class="LineNr"> 439 </span>    }
+<span id="L440" class="LineNr"> 440 </span>  }
+<span id="L441" class="LineNr"> 441 </span>  <span class="Statement">return</span> <span class="Constant">false</span>;
+<span id="L442" class="LineNr"> 442 </span>}
+<span id="L443" class="LineNr"> 443 </span>
+<span id="L444" class="LineNr"> 444 </span><span class="Constant">20.</span>树的子结构判断
+<span id="L445" class="LineNr"> 445 </span><span class="Type">bool</span> isSubTree(TreeNode* root1,TreeNode* root2)
+<span id="L446" class="LineNr"> 446 </span>{
+<span id="L447" class="LineNr"> 447 </span>  <span class="Statement">if</span>(!root2)
+<span id="L448" class="LineNr"> 448 </span>    <span class="Statement">return</span> <span class="Constant">true</span>;
+<span id="L449" class="LineNr"> 449 </span>  <span class="Statement">if</span>(!root1)
+<span id="L450" class="LineNr"> 450 </span>    <span class="Statement">return</span> <span class="Constant">false</span>;
+<span id="L451" class="LineNr"> 451 </span>  <span class="Statement">if</span>(root1-&gt;val!=root2-&gt;val)
+<span id="L452" class="LineNr"> 452 </span>    <span class="Statement">return</span> <span class="Constant">false</span>;
+<span id="L453" class="LineNr"> 453 </span>  <span class="Statement">return</span> isSubTree(root1-&gt;left,root2-&gt;left) &amp;&amp; isSubTree(root1-&gt;right,root2-&gt;right);
+<span id="L454" class="LineNr"> 454 </span>}
+<span id="L455" class="LineNr"> 455 </span><span class="Type">bool</span> hasSubTree(TreeNode* root1,TreeNode* root2)
+<span id="L456" class="LineNr"> 456 </span>{
+<span id="L457" class="LineNr"> 457 </span>  <span class="Statement">if</span>(!root1 || !root2)
+<span id="L458" class="LineNr"> 458 </span>    <span class="Statement">return</span> <span class="Constant">false</span>;
+<span id="L459" class="LineNr"> 459 </span>  <span class="Type">bool</span> flag=<span class="Constant">false</span>;
+<span id="L460" class="LineNr"> 460 </span>  <span class="Statement">if</span>(root1-&gt;val==root2-&gt;val)
+<span id="L461" class="LineNr"> 461 </span>    flag=isSubTree(root1,root2);
+<span id="L462" class="LineNr"> 462 </span>  <span class="Statement">if</span>(flag)
+<span id="L463" class="LineNr"> 463 </span>    <span class="Statement">return</span> flag;
+<span id="L464" class="LineNr"> 464 </span>  <span class="Statement">return</span> hasSubTree(root1-&gt;left,root2) || hasSubTree(root1-&gt;right,root2);
+<span id="L465" class="LineNr"> 465 </span>}
+<span id="L466" class="LineNr"> 466 </span>
+<span id="L467" class="LineNr"> 467 </span><span class="Constant">21.</span>左旋字符串
+<span id="L468" class="LineNr"> 468 </span>abcdefg-&gt;cdefgab  <span class="Constant">2</span>位
+<span id="L469" class="LineNr"> 469 </span><span class="Type">void</span> reverseStr(string &amp;str,<span class="Type">int</span> l,<span class="Type">int</span> h)
+<span id="L470" class="LineNr"> 470 </span>{
+<span id="L471" class="LineNr"> 471 </span>  <span class="Statement">for</span>(<span class="Type">int</span> i=l,j=h;i&lt;=l+(h-l)/<span class="Constant">2</span>;++i,j--)
+<span id="L472" class="LineNr"> 472 </span>    swap(str[i],str[j]);
+<span id="L473" class="LineNr"> 473 </span>}
+<span id="L474" class="LineNr"> 474 </span>string leftRotateString(string str,<span class="Type">int</span> n)
+<span id="L475" class="LineNr"> 475 </span>{
+<span id="L476" class="LineNr"> 476 </span>  <span class="Type">int</span> len=str.size();
+<span id="L477" class="LineNr"> 477 </span>  <span class="Statement">if</span>(len&lt;=<span class="Constant">0</span>)
+<span id="L478" class="LineNr"> 478 </span>    <span class="Statement">return</span> <span class="Constant">&quot;&quot;</span>;
+<span id="L479" class="LineNr"> 479 </span>  <span class="Statement">if</span>(n==<span class="Constant">0</span>)
+<span id="L480" class="LineNr"> 480 </span>    <span class="Statement">return</span> str;
+<span id="L481" class="LineNr"> 481 </span>  reverse(str,<span class="Constant">0</span>,n-<span class="Constant">1</span>);
+<span id="L482" class="LineNr"> 482 </span>  reverse(str,n,len-<span class="Constant">1</span>);
+<span id="L483" class="LineNr"> 483 </span>  reverse(str,<span class="Constant">0</span>,len-<span class="Constant">1</span>);
+<span id="L484" class="LineNr"> 484 </span>}
+<span id="L485" class="LineNr"> 485 </span>
+<span id="L486" class="LineNr"> 486 </span><span class="Constant">22.</span>字符串逆序（递归）
+<span id="L487" class="LineNr"> 487 </span><span class="Type">void</span> reverse(string &amp;s,<span class="Type">int</span> l,<span class="Type">int</span> r)
+<span id="L488" class="LineNr"> 488 </span>{
+<span id="L489" class="LineNr"> 489 </span>  <span class="Statement">if</span>(l&gt;=r)
+<span id="L490" class="LineNr"> 490 </span>    <span class="Statement">return</span>;
+<span id="L491" class="LineNr"> 491 </span>  swap(s[l],s[r]);
+<span id="L492" class="LineNr"> 492 </span>  reverse(s,l+<span class="Constant">1</span>,r-<span class="Constant">1</span>);
+<span id="L493" class="LineNr"> 493 </span>}
+<span id="L494" class="LineNr"> 494 </span>
+<span id="L495" class="LineNr"> 495 </span>字符串逆序打印
+<span id="L496" class="LineNr"> 496 </span><span class="Type">void</span> reversePrint(string s,<span class="Type">int</span> i)
+<span id="L497" class="LineNr"> 497 </span>{
+<span id="L498" class="LineNr"> 498 </span>  <span class="Statement">if</span>(s[i]!=<span class="Special">'\0'</span>)
+<span id="L499" class="LineNr"> 499 </span>  {
+<span id="L500" class="LineNr"> 500 </span>    reversePrint(s,i+<span class="Constant">1</span>);
+<span id="L501" class="LineNr"> 501 </span>    cout&lt;&lt;s[i];
+<span id="L502" class="LineNr"> 502 </span>  }
+<span id="L503" class="LineNr"> 503 </span>}
+<span id="L504" class="LineNr"> 504 </span>
+<span id="L505" class="LineNr"> 505 </span><span class="Constant">23.</span>二叉树中和为某一值的路径
+<span id="L506" class="LineNr"> 506 </span>vector&lt;vector&lt;<span class="Type">int</span>&gt;&gt; ans;
+<span id="L507" class="LineNr"> 507 </span><span class="Type">void</span> findPathStack(TreeNode* root,<span class="Type">int</span> expectNumber,<span class="Type">int</span> sum,vector&lt;<span class="Type">int</span>&gt; vec)
+<span id="L508" class="LineNr"> 508 </span>{
+<span id="L509" class="LineNr"> 509 </span>  sum+=root-&gt;val;
+<span id="L510" class="LineNr"> 510 </span>  vec.push_back(root-&gt;val);
+<span id="L511" class="LineNr"> 511 </span>  <span class="Statement">if</span>(!root-&gt;left&amp;&amp;!root-&gt;right)
+<span id="L512" class="LineNr"> 512 </span>  {
+<span id="L513" class="LineNr"> 513 </span>    <span class="Statement">if</span>(sum==expectNumber)
+<span id="L514" class="LineNr"> 514 </span>      ans.push_back(vec);
+<span id="L515" class="LineNr"> 515 </span>  }
+<span id="L516" class="LineNr"> 516 </span>  <span class="Statement">if</span>(root-&gt;left)
+<span id="L517" class="LineNr"> 517 </span>    findPathStack(root-&gt;left,expectNumber,sum,vec);
+<span id="L518" class="LineNr"> 518 </span>  <span class="Statement">if</span>(root-&gt;right)
+<span id="L519" class="LineNr"> 519 </span>    findPathStack(root-&gt;right,expectNumber,sum,vec);
+<span id="L520" class="LineNr"> 520 </span>}
+<span id="L521" class="LineNr"> 521 </span>vector&lt;vector&lt;<span class="Type">int</span>&gt;&gt; findPath(TreeNode* root,<span class="Type">int</span> expectNumber)
+<span id="L522" class="LineNr"> 522 </span>{
+<span id="L523" class="LineNr"> 523 </span>  <span class="Statement">if</span>(!root)
+<span id="L524" class="LineNr"> 524 </span>    <span class="Statement">return</span> ans;
+<span id="L525" class="LineNr"> 525 </span>  vector&lt;<span class="Type">int</span>&gt; vec;
+<span id="L526" class="LineNr"> 526 </span>  findPathStack(root,expectNumber,<span class="Constant">0</span>,vec);
+<span id="L527" class="LineNr"> 527 </span>  <span class="Statement">return</span> ans;
+<span id="L528" class="LineNr"> 528 </span>}
+<span id="L529" class="LineNr"> 529 </span>
+<span id="L530" class="LineNr"> 530 </span><span class="Constant">24.</span>二叉搜索树与双向链表
+<span id="L531" class="LineNr"> 531 </span><span class="Type">void</span> convertNode(TreeNode* root,TreeNode*&amp; pre)
+<span id="L532" class="LineNr"> 532 </span>{
+<span id="L533" class="LineNr"> 533 </span>  <span class="Statement">if</span>(!root)
+<span id="L534" class="LineNr"> 534 </span>    <span class="Statement">return</span>;
+<span id="L535" class="LineNr"> 535 </span>  <span class="Statement">if</span>(root-&gt;left)
+<span id="L536" class="LineNr"> 536 </span>    convertNode(root-&gt;left);
+<span id="L537" class="LineNr"> 537 </span>  root-&gt;left=pre;
+<span id="L538" class="LineNr"> 538 </span>  <span class="Statement">if</span>(pre)
+<span id="L539" class="LineNr"> 539 </span>    pre-&gt;right=root;
+<span id="L540" class="LineNr"> 540 </span>  <span class="Statement">if</span>(root-&gt;right)
+<span id="L541" class="LineNr"> 541 </span>    convertNode(root-&gt;right);
+<span id="L542" class="LineNr"> 542 </span>}
+<span id="L543" class="LineNr"> 543 </span>TreeNode* convert(TreeNode* root)
+<span id="L544" class="LineNr"> 544 </span>{
+<span id="L545" class="LineNr"> 545 </span>  TreeNode* pre=<span class="Constant">NULL</span>;
+<span id="L546" class="LineNr"> 546 </span>  convert(root,pre);
+<span id="L547" class="LineNr"> 547 </span>  <span class="Statement">while</span>(pre&amp;&amp;pre-&gt;left)
+<span id="L548" class="LineNr"> 548 </span>    pre=pre-&gt;left;
+<span id="L549" class="LineNr"> 549 </span>  <span class="Statement">return</span> pre;
+<span id="L550" class="LineNr"> 550 </span>}
+<span id="L551" class="LineNr"> 551 </span>
+<span id="L552" class="LineNr"> 552 </span><span class="Constant">25.</span>KMP   O(m+n)
+<span id="L553" class="LineNr"> 553 </span>         <span class="Constant">0</span> <span class="Constant">1</span> <span class="Constant">2</span> <span class="Constant">3</span> <span class="Constant">4</span> <span class="Constant">5</span> <span class="Constant">6</span> <span class="Constant">7</span> <span class="Constant">8</span>
+<span id="L554" class="LineNr"> 554 </span><span class="Statement">str</span>:     A B A B A B A B B
+<span id="L555" class="LineNr"> 555 </span><span class="Statement">substr</span>:  A B A B A B B
+<span id="L556" class="LineNr"> 556 </span><span class="Statement">next</span>:   -<span class="Constant">1</span> <span class="Constant">0</span> <span class="Constant">0</span> <span class="Constant">1</span> <span class="Constant">2</span> <span class="Constant">3</span> <span class="Constant">4</span>
+<span id="L557" class="LineNr"> 557 </span>
+<span id="L558" class="LineNr"> 558 </span>i=<span class="Constant">6</span>处不匹配，str、substr的<span class="Constant">0</span>-<span class="Constant">5</span>处相同，此时 j=next[j]=<span class="Constant">4</span>意思指：<span class="Constant">0</span>-<span class="Constant">5</span>之间str的<span class="Constant">2</span>-<span class="Constant">5</span>与substr的<span class="Constant">0</span>-<span class="Constant">3</span>匹配，下一步只需将j=<span class="Constant">4</span>以后元素与i依次比较
+<span id="L559" class="LineNr"> 559 </span>
+<span id="L560" class="LineNr"> 560 </span><span class="Type">int</span> kmp(string str,string substr,<span class="Type">int</span> next[])
+<span id="L561" class="LineNr"> 561 </span>{
+<span id="L562" class="LineNr"> 562 </span>  <span class="Type">int</span> i=<span class="Constant">0</span>,j=<span class="Constant">0</span>;
+<span id="L563" class="LineNr"> 563 </span>  <span class="Statement">while</span>(i&lt;str.size()&amp;&amp;j&lt;substr.size())
+<span id="L564" class="LineNr"> 564 </span>  {
+<span id="L565" class="LineNr"> 565 </span>    <span class="Statement">if</span>(str[i]==substr[j])
+<span id="L566" class="LineNr"> 566 </span>    {
+<span id="L567" class="LineNr"> 567 </span>      ++i;
+<span id="L568" class="LineNr"> 568 </span>      ++j;
+<span id="L569" class="LineNr"> 569 </span>    }
+<span id="L570" class="LineNr"> 570 </span>    <span class="Statement">else</span>
+<span id="L571" class="LineNr"> 571 </span>    {
+<span id="L572" class="LineNr"> 572 </span>      j=next[j];
+<span id="L573" class="LineNr"> 573 </span>      <span class="Statement">if</span>(j==-<span class="Constant">1</span>)
+<span id="L574" class="LineNr"> 574 </span>      {
+<span id="L575" class="LineNr"> 575 </span>        j=<span class="Constant">0</span>;
+<span id="L576" class="LineNr"> 576 </span>        ++i;
+<span id="L577" class="LineNr"> 577 </span>      }
+<span id="L578" class="LineNr"> 578 </span>    }
+<span id="L579" class="LineNr"> 579 </span>  }
+<span id="L580" class="LineNr"> 580 </span>  <span class="Statement">if</span>(j==substr.size())
+<span id="L581" class="LineNr"> 581 </span>    <span class="Statement">return</span> i-substr.size();
+<span id="L582" class="LineNr"> 582 </span>}
+<span id="L583" class="LineNr"> 583 </span>
+<span id="L584" class="LineNr"> 584 </span><span class="Type">void</span> getNext(string subStr,<span class="Type">int</span> next[])
+<span id="L585" class="LineNr"> 585 </span>{
+<span id="L586" class="LineNr"> 586 </span>  <span class="Type">int</span> i=<span class="Constant">0</span>,j=-<span class="Constant">1</span>;
+<span id="L587" class="LineNr"> 587 </span>  next[<span class="Constant">0</span>]=-<span class="Constant">1</span>;
+<span id="L588" class="LineNr"> 588 </span>  <span class="Statement">while</span>(i&lt;subStr.size())
+<span id="L589" class="LineNr"> 589 </span>  {
+<span id="L590" class="LineNr"> 590 </span>    <span class="Statement">if</span>(j==-<span class="Constant">1</span>||subStr[i]==subStr[j])
+<span id="L591" class="LineNr"> 591 </span>    {
+<span id="L592" class="LineNr"> 592 </span>      ++i;
+<span id="L593" class="LineNr"> 593 </span>      ++j;
+<span id="L594" class="LineNr"> 594 </span>      next[i]=j;
+<span id="L595" class="LineNr"> 595 </span>    }
+<span id="L596" class="LineNr"> 596 </span>    <span class="Statement">else</span>
+<span id="L597" class="LineNr"> 597 </span>      j=next[j];
+<span id="L598" class="LineNr"> 598 </span>  }
+<span id="L599" class="LineNr"> 599 </span>}
+<span id="L600" class="LineNr"> 600 </span>
+<span id="L601" class="LineNr"> 601 </span><span class="Constant">26.</span>字符串的全排列
+<span id="L602" class="LineNr"> 602 </span><span class="Type">void</span> permutation(string s,<span class="Type">int</span> l,<span class="Type">int</span> h)
+<span id="L603" class="LineNr"> 603 </span>{
+<span id="L604" class="LineNr"> 604 </span>  <span class="Statement">if</span>(l==h)
+<span id="L605" class="LineNr"> 605 </span>  {
+<span id="L606" class="LineNr"> 606 </span>    cout&lt;&lt;s&lt;&lt;endl;
+<span id="L607" class="LineNr"> 607 </span>    <span class="Statement">return</span>;
+<span id="L608" class="LineNr"> 608 </span>  }
+<span id="L609" class="LineNr"> 609 </span>  <span class="Statement">for</span>(<span class="Type">int</span> i=l;i&lt;=h;i++)
+<span id="L610" class="LineNr"> 610 </span>  {
+<span id="L611" class="LineNr"> 611 </span>    swap(s[i],s[l]);
+<span id="L612" class="LineNr"> 612 </span>    permutation(s,l+<span class="Constant">1</span>,h);
+<span id="L613" class="LineNr"> 613 </span>    swap(s,l+<span class="Constant">1</span>,h);
+<span id="L614" class="LineNr"> 614 </span>  }
+<span id="L615" class="LineNr"> 615 </span>}
+<span id="L616" class="LineNr"> 616 </span>
+<span id="L617" class="LineNr"> 617 </span>用dfs:
+<span id="L618" class="LineNr"> 618 </span><span class="Type">void</span> perm_dfs(string s,<span class="Type">int</span> i,vector&lt;<span class="Type">char</span>&gt; &amp;path,vector&lt;<span class="Type">int</span>&gt; vis)
+<span id="L619" class="LineNr"> 619 </span>{
+<span id="L620" class="LineNr"> 620 </span>  <span class="Statement">if</span>(i==s.size())
+<span id="L621" class="LineNr"> 621 </span>  {
+<span id="L622" class="LineNr"> 622 </span>    <span class="Statement">for</span>(<span class="Type">auto</span> c:path)
+<span id="L623" class="LineNr"> 623 </span>      cout&lt;&lt;c&lt;&lt;<span class="Constant">&quot; &quot;</span>;
+<span id="L624" class="LineNr"> 624 </span>    cout&lt;&lt;endl;
+<span id="L625" class="LineNr"> 625 </span>    <span class="Statement">return</span>;
+<span id="L626" class="LineNr"> 626 </span>  }
+<span id="L627" class="LineNr"> 627 </span>  <span class="Statement">for</span>(<span class="Type">int</span> k=<span class="Constant">0</span>;k&lt;s.size();k++)
+<span id="L628" class="LineNr"> 628 </span>  {
+<span id="L629" class="LineNr"> 629 </span>    <span class="Statement">if</span>(vis[k]==<span class="Constant">0</span>)
+<span id="L630" class="LineNr"> 630 </span>    {
+<span id="L631" class="LineNr"> 631 </span>      path.push_back(s[k]);
+<span id="L632" class="LineNr"> 632 </span>      vis[k]=<span class="Constant">1</span>;
+<span id="L633" class="LineNr"> 633 </span>      perm_dfs(s,i+<span class="Constant">1</span>,path,vis);
+<span id="L634" class="LineNr"> 634 </span>      vis[k]=<span class="Constant">0</span>;
+<span id="L635" class="LineNr"> 635 </span>      path.pop_back();
+<span id="L636" class="LineNr"> 636 </span>    }
+<span id="L637" class="LineNr"> 637 </span>  }
+<span id="L638" class="LineNr"> 638 </span>}
+<span id="L639" class="LineNr"> 639 </span>
+<span id="L640" class="LineNr"> 640 </span><span class="Constant">27.</span>组合
+<span id="L641" class="LineNr"> 641 </span><span class="Type">void</span> combination(<span class="Type">char</span>* str,<span class="Type">int</span> num,vector&lt;<span class="Type">char</span>&gt; &amp;ret)
+<span id="L642" class="LineNr"> 642 </span>{
+<span id="L643" class="LineNr"> 643 </span>  <span class="Statement">if</span>(num==<span class="Constant">0</span>)
+<span id="L644" class="LineNr"> 644 </span>  {
+<span id="L645" class="LineNr"> 645 </span>    <span class="Statement">for</span>(<span class="Type">auto</span> c:ret)
+<span id="L646" class="LineNr"> 646 </span>      cout&lt;&lt;c;
+<span id="L647" class="LineNr"> 647 </span>    cout&lt;&lt;endl;
+<span id="L648" class="LineNr"> 648 </span>    <span class="Statement">return</span>;
+<span id="L649" class="LineNr"> 649 </span>  }
+<span id="L650" class="LineNr"> 650 </span>  <span class="Statement">if</span>(*str==<span class="Special">'\0'</span>)
+<span id="L651" class="LineNr"> 651 </span>    <span class="Statement">return</span>;
+<span id="L652" class="LineNr"> 652 </span>  ret.push_back(*str);
+<span id="L653" class="LineNr"> 653 </span>  combination(str+<span class="Constant">1</span>,num-<span class="Constant">1</span>,ret);  <span class="Comment">//把当前字符放到组合中，从剩下的n-1个字符中选取m-1个字符</span>
+<span id="L654" class="LineNr"> 654 </span>  ret.pop_back();
+<span id="L655" class="LineNr"> 655 </span>  combination(str+<span class="Constant">1</span>,num,ret); <span class="Comment">//不放入该字符，从剩下的n个字符中选取m-1个字符</span>
+<span id="L656" class="LineNr"> 656 </span>}
+<span id="L657" class="LineNr"> 657 </span>
+<span id="L658" class="LineNr"> 658 </span><span class="Type">void</span> combination(<span class="Type">char</span>* str)
+<span id="L659" class="LineNr"> 659 </span>{
+<span id="L660" class="LineNr"> 660 </span>  <span class="Statement">if</span>(str==<span class="Constant">NULL</span>)
+<span id="L661" class="LineNr"> 661 </span>    <span class="Statement">return</span>;
+<span id="L662" class="LineNr"> 662 </span>  <span class="Type">int</span> len=strlen(str);
+<span id="L663" class="LineNr"> 663 </span>  vector&lt;<span class="Type">char</span>&gt; ret;
+<span id="L664" class="LineNr"> 664 </span>  <span class="Statement">for</span>(<span class="Type">int</span> i=<span class="Constant">1</span>;i&lt;=len;i++)
+<span id="L665" class="LineNr"> 665 </span>    combination(str,i,ret);
+<span id="L666" class="LineNr"> 666 </span>}
+<span id="L667" class="LineNr"> 667 </span>
+<span id="L668" class="LineNr"> 668 </span><span class="Constant">28.</span>二叉树的镜像
+<span id="L669" class="LineNr"> 669 </span>递归版：
+<span id="L670" class="LineNr"> 670 </span><span class="Type">void</span> Mirror(TreeNode* root)
+<span id="L671" class="LineNr"> 671 </span>{
+<span id="L672" class="LineNr"> 672 </span>  <span class="Statement">if</span>(!root)
+<span id="L673" class="LineNr"> 673 </span>    <span class="Statement">return</span>;
+<span id="L674" class="LineNr"> 674 </span>  <span class="Statement">if</span>(!root-&gt;left&amp;&amp;!root-&gt;right)
+<span id="L675" class="LineNr"> 675 </span>    <span class="Statement">return</span>;
+<span id="L676" class="LineNr"> 676 </span>  TreeNode* ptemp=root-&gt;left;
+<span id="L677" class="LineNr"> 677 </span>  root-&gt;left=root-&gt;right;
+<span id="L678" class="LineNr"> 678 </span>  root-&gt;right=ptemp;
+<span id="L679" class="LineNr"> 679 </span>  <span class="Statement">if</span>(root-&gt;left)
+<span id="L680" class="LineNr"> 680 </span>    Mirror(root-&gt;left);
+<span id="L681" class="LineNr"> 681 </span>  <span class="Statement">if</span>(root-&gt;right)
+<span id="L682" class="LineNr"> 682 </span>    Mirror(root-&gt;right);
+<span id="L683" class="LineNr"> 683 </span>}
+<span id="L684" class="LineNr"> 684 </span>
+<span id="L685" class="LineNr"> 685 </span>非递归版:
+<span id="L686" class="LineNr"> 686 </span><span class="Type">void</span> Mirror(TreeNode* root)
+<span id="L687" class="LineNr"> 687 </span>{
+<span id="L688" class="LineNr"> 688 </span>  <span class="Statement">if</span>(root==<span class="Constant">NULL</span>)
+<span id="L689" class="LineNr"> 689 </span>    <span class="Statement">return</span>;
+<span id="L690" class="LineNr"> 690 </span>  stack&lt;TreeNode*&gt; st;
+<span id="L691" class="LineNr"> 691 </span>  st.push(root);
+<span id="L692" class="LineNr"> 692 </span>  <span class="Statement">while</span>(st.size())
+<span id="L693" class="LineNr"> 693 </span>  {
+<span id="L694" class="LineNr"> 694 </span>    TreeNode* tree=st.top();
+<span id="L695" class="LineNr"> 695 </span>    st.pop();
+<span id="L696" class="LineNr"> 696 </span>    <span class="Statement">if</span>(tree-&gt;left||tree-&gt;right)
+<span id="L697" class="LineNr"> 697 </span>    {
+<span id="L698" class="LineNr"> 698 </span>      TreeNode* ptmep=tree-&gt;left;
+<span id="L699" class="LineNr"> 699 </span>      tree-&gt;left=tree-&gt;right;
+<span id="L700" class="LineNr"> 700 </span>      tree-&gt;right=ptemp;
+<span id="L701" class="LineNr"> 701 </span>    }
+<span id="L702" class="LineNr"> 702 </span>    <span class="Statement">if</span>(tree-&gt;left)
+<span id="L703" class="LineNr"> 703 </span>      st.push(tree-&gt;left);
+<span id="L704" class="LineNr"> 704 </span>    <span class="Statement">if</span>(tree-&gt;right)
+<span id="L705" class="LineNr"> 705 </span>      st.push(tree-&gt;right);
+<span id="L706" class="LineNr"> 706 </span>  }
+<span id="L707" class="LineNr"> 707 </span>}
+<span id="L708" class="LineNr"> 708 </span>
+<span id="L709" class="LineNr"> 709 </span><span class="Constant">29.</span>字典树
+<span id="L710" class="LineNr"> 710 </span>(大致框架)
+<span id="L711" class="LineNr"> 711 </span><span class="Type">struct</span> TrieNode
+<span id="L712" class="LineNr"> 712 </span>{
+<span id="L713" class="LineNr"> 713 </span>  TrieNode* next[<span class="Constant">26</span>];
+<span id="L714" class="LineNr"> 714 </span>  <span class="Type">bool</span> exist;
+<span id="L715" class="LineNr"> 715 </span>};
+<span id="L716" class="LineNr"> 716 </span>TrieNode* createTrieNode()
+<span id="L717" class="LineNr"> 717 </span>{
+<span id="L718" class="LineNr"> 718 </span>  TrieNode* node=<span class="Statement">new</span> TrieNode();
+<span id="L719" class="LineNr"> 719 </span>  memeset(node-&gt;next,<span class="Constant">0</span>,<span class="Statement">sizeof</span>(node-&gt;next));
+<span id="L720" class="LineNr"> 720 </span>  node-&gt;exist=<span class="Constant">false</span>;
+<span id="L721" class="LineNr"> 721 </span>  <span class="Statement">return</span> node;
+<span id="L722" class="LineNr"> 722 </span>}
+<span id="L723" class="LineNr"> 723 </span>
+<span id="L724" class="LineNr"> 724 </span><span class="Type">void</span> TrieInsert(TrieNode* root,string word)
+<span id="L725" class="LineNr"> 725 </span>{
+<span id="L726" class="LineNr"> 726 </span>  TrieNode* p=root;
+<span id="L727" class="LineNr"> 727 </span>  <span class="Statement">for</span>(<span class="Type">auto</span> c:word)
+<span id="L728" class="LineNr"> 728 </span>  {
+<span id="L729" class="LineNr"> 729 </span>    <span class="Type">int</span> id=c-<span class="Constant">'a'</span>;
+<span id="L730" class="LineNr"> 730 </span>    <span class="Statement">if</span>(p-&gt;next[id]==<span class="Constant">NULL</span>)
+<span id="L731" class="LineNr"> 731 </span>      p-&gt;next[id]=createTrieNode();
+<span id="L732" class="LineNr"> 732 </span>    p=p-&gt;next[id];
+<span id="L733" class="LineNr"> 733 </span>  }
+<span id="L734" class="LineNr"> 734 </span>  p=p-&gt;exist=<span class="Constant">true</span>;
+<span id="L735" class="LineNr"> 735 </span>}
+<span id="L736" class="LineNr"> 736 </span>
+<span id="L737" class="LineNr"> 737 </span><span class="Type">int</span> TrieSearch(TrieNode* root,string word)
+<span id="L738" class="LineNr"> 738 </span>{
+<span id="L739" class="LineNr"> 739 </span>  <span class="Type">int</span> ans=<span class="Constant">0</span>;
+<span id="L740" class="LineNr"> 740 </span>  TrieNode* p=root;
+<span id="L741" class="LineNr"> 741 </span>  <span class="Statement">for</span>(<span class="Type">auto</span> c:word)
+<span id="L742" class="LineNr"> 742 </span>  {
+<span id="L743" class="LineNr"> 743 </span>    <span class="Type">int</span> id=c-<span class="Constant">'a'</span>;
+<span id="L744" class="LineNr"> 744 </span>    p=p-&gt;next[id];
+<span id="L745" class="LineNr"> 745 </span>    <span class="Statement">if</span>(p==<span class="Constant">NULL</span>)
+<span id="L746" class="LineNr"> 746 </span>      <span class="Statement">break</span>;
+<span id="L747" class="LineNr"> 747 </span>    <span class="Statement">if</span>(p-&gt;exist)
+<span id="L748" class="LineNr"> 748 </span>        ans++;
+<span id="L749" class="LineNr"> 749 </span>  }
+<span id="L750" class="LineNr"> 750 </span>  <span class="Statement">return</span> ans;
+<span id="L751" class="LineNr"> 751 </span>}
+<span id="L752" class="LineNr"> 752 </span>
+<span id="L753" class="LineNr"> 753 </span><span class="Constant">31.</span>并查集
+<span id="L754" class="LineNr"> 754 </span>关于连通图的例子示意，有多个城市，有些城市之间有道路连接，问至少还需要几条路使得任意城市之间都可以到达
+<span id="L755" class="LineNr"> 755 </span>
+<span id="L756" class="LineNr"> 756 </span><span class="Type">int</span> find(<span class="Type">int</span> x)
+<span id="L757" class="LineNr"> 757 </span>{
+<span id="L758" class="LineNr"> 758 </span>  <span class="Type">int</span> r=x;
+<span id="L759" class="LineNr"> 759 </span>  <span class="Statement">while</span>(r!=pre[r])
+<span id="L760" class="LineNr"> 760 </span>    r=pre[r];
+<span id="L761" class="LineNr"> 761 </span>  <span class="Type">int</span> i=x,j;
+<span id="L762" class="LineNr"> 762 </span>  <span class="Statement">while</span>(pre[i]!=r)   <span class="Comment">//路径压缩</span>
+<span id="L763" class="LineNr"> 763 </span>  {
+<span id="L764" class="LineNr"> 764 </span>    j=pre[i];
+<span id="L765" class="LineNr"> 765 </span>    pre[i]=r;
+<span id="L766" class="LineNr"> 766 </span>    i=j;
+<span id="L767" class="LineNr"> 767 </span>  }
+<span id="L768" class="LineNr"> 768 </span>  <span class="Statement">return</span> r;
+<span id="L769" class="LineNr"> 769 </span>}
+<span id="L770" class="LineNr"> 770 </span>
+<span id="L771" class="LineNr"> 771 </span><span class="Type">void</span> mix(<span class="Type">int</span> x,<span class="Type">int</span> y)
+<span id="L772" class="LineNr"> 772 </span>{
+<span id="L773" class="LineNr"> 773 </span>  <span class="Type">int</span> fx=find(x);
+<span id="L774" class="LineNr"> 774 </span>  <span class="Type">int</span> fy=find(y);
+<span id="L775" class="LineNr"> 775 </span>  <span class="Statement">if</span>(fx!=fy)
+<span id="L776" class="LineNr"> 776 </span>    pre[fy]=fx;
+<span id="L777" class="LineNr"> 777 </span>}
+<span id="L778" class="LineNr"> 778 </span>
+<span id="L779" class="LineNr"> 779 </span><span class="Type">int</span> main()
+<span id="L780" class="LineNr"> 780 </span>{
+<span id="L781" class="LineNr"> 781 </span>  <span class="Type">int</span> n,m,a,b,i,j,ans;   <span class="Comment">//n为城市个数，m为路的条数</span>
+<span id="L782" class="LineNr"> 782 </span>  <span class="Statement">while</span>(scanf(<span class="Constant">&quot;</span><span class="Special">%d%d</span><span class="Constant">&quot;</span>,&amp;n,&amp;m)&amp;&amp;n)
+<span id="L783" class="LineNr"> 783 </span>  {
+<span id="L784" class="LineNr"> 784 </span>    <span class="Statement">for</span>(i=<span class="Constant">1</span>;i&lt;=N;i++)
+<span id="L785" class="LineNr"> 785 </span>      pre[i]=i;
+<span id="L786" class="LineNr"> 786 </span>    <span class="Statement">for</span>(i=<span class="Constant">1</span>;i&lt;=M;i++)
+<span id="L787" class="LineNr"> 787 </span>    {
+<span id="L788" class="LineNr"> 788 </span>      scanf(<span class="Constant">&quot;</span><span class="Special">%d%d</span><span class="Constant">&quot;</span>,&amp;a,&amp;b);
+<span id="L789" class="LineNr"> 789 </span>      mix(a,b);
+<span id="L790" class="LineNr"> 790 </span>    }
+<span id="L791" class="LineNr"> 791 </span>    memset(t,<span class="Constant">0</span>,<span class="Statement">sizeof</span>(t));
+<span id="L792" class="LineNr"> 792 </span>    <span class="Statement">for</span>(i=<span class="Constant">1</span>;i&lt;N;i++)
+<span id="L793" class="LineNr"> 793 </span>      t[find(i)]=<span class="Constant">1</span>;
+<span id="L794" class="LineNr"> 794 </span>    <span class="Statement">for</span>(ans=<span class="Constant">0</span>,i=<span class="Constant">1</span>;i&lt;=N;i++)
+<span id="L795" class="LineNr"> 795 </span>      <span class="Statement">if</span>(t[i])
+<span id="L796" class="LineNr"> 796 </span>        ans++;
+<span id="L797" class="LineNr"> 797 </span>    printf(<span class="Constant">&quot;</span><span class="Special">%d</span><span class="Special">\n</span><span class="Constant">&quot;</span>,ans);
+<span id="L798" class="LineNr"> 798 </span>  }
+<span id="L799" class="LineNr"> 799 </span>}
+<span id="L800" class="LineNr"> 800 </span>
+<span id="L801" class="LineNr"> 801 </span><span class="Constant">32.</span>sqrt(n)
+<span id="L802" class="LineNr"> 802 </span>牛顿迭代法
+<span id="L803" class="LineNr"> 803 </span><span class="Type">double</span> sqrt(<span class="Type">double</span> a)
+<span id="L804" class="LineNr"> 804 </span>{
+<span id="L805" class="LineNr"> 805 </span>  <span class="Type">double</span> x=a,y=<span class="Constant">0</span>;
+<span id="L806" class="LineNr"> 806 </span>  <span class="Statement">while</span>(fabs(x-y)&gt;<span class="Constant">0.00001</span>)
+<span id="L807" class="LineNr"> 807 </span>  {
+<span id="L808" class="LineNr"> 808 </span>    y=x;
+<span id="L809" class="LineNr"> 809 </span>    x=<span class="Constant">0.5</span>*(x+a/x);
+<span id="L810" class="LineNr"> 810 </span>  }
+<span id="L811" class="LineNr"> 811 </span>  <span class="Statement">return</span> x;
+<span id="L812" class="LineNr"> 812 </span>}
+<span id="L813" class="LineNr"> 813 </span>
+<span id="L814" class="LineNr"> 814 </span>二分法：
+<span id="L815" class="LineNr"> 815 </span><span class="Type">int</span> mySqrt(<span class="Type">int</span> x)
+<span id="L816" class="LineNr"> 816 </span>{
+<span id="L817" class="LineNr"> 817 </span>  <span class="Statement">if</span>(x&lt;=<span class="Constant">1</span>)
+<span id="L818" class="LineNr"> 818 </span>      <span class="Statement">return</span> x;
+<span id="L819" class="LineNr"> 819 </span>  <span class="Type">long</span> <span class="Type">long</span> h=x/<span class="Constant">2</span>;
+<span id="L820" class="LineNr"> 820 </span>  <span class="Type">long</span> <span class="Type">long</span> l=<span class="Constant">2</span>;
+<span id="L821" class="LineNr"> 821 </span>  <span class="Type">long</span> <span class="Type">long</span> mid=(h+l)&gt;&gt;<span class="Constant">1</span>;
+<span id="L822" class="LineNr"> 822 </span>  <span class="Statement">while</span>(l&lt;mid)
+<span id="L823" class="LineNr"> 823 </span>  {
+<span id="L824" class="LineNr"> 824 </span>      <span class="Statement">if</span>(mid*mid&gt;x)
+<span id="L825" class="LineNr"> 825 </span>          h=mid;
+<span id="L826" class="LineNr"> 826 </span>      <span class="Statement">else</span> <span class="Statement">if</span>(mid*mid&lt;x)
+<span id="L827" class="LineNr"> 827 </span>          l=mid;
+<span id="L828" class="LineNr"> 828 </span>      <span class="Statement">else</span>
+<span id="L829" class="LineNr"> 829 </span>          <span class="Statement">return</span> mid;
+<span id="L830" class="LineNr"> 830 </span>      mid=(h+l)&gt;&gt;<span class="Constant">1</span>;
+<span id="L831" class="LineNr"> 831 </span>
+<span id="L832" class="LineNr"> 832 </span>  }
+<span id="L833" class="LineNr"> 833 </span>  <span class="Statement">return</span> mid;
+<span id="L834" class="LineNr"> 834 </span>}
+<span id="L835" class="LineNr"> 835 </span>
+<span id="L836" class="LineNr"> 836 </span><span class="Constant">33.</span>洗牌算法
+<span id="L837" class="LineNr"> 837 </span><span class="Type">void</span> shuffle(<span class="Type">int</span> *a,<span class="Type">int</span> n)
+<span id="L838" class="LineNr"> 838 </span>{
+<span id="L839" class="LineNr"> 839 </span>  <span class="Statement">for</span>(<span class="Type">int</span> i=n-<span class="Constant">1</span>;i&gt;<span class="Constant">0</span>;i--)
+<span id="L840" class="LineNr"> 840 </span>  {
+<span id="L841" class="LineNr"> 841 </span>    srand((<span class="Type">unsigned</span>)time(<span class="Constant">NULL</span>));
+<span id="L842" class="LineNr"> 842 </span>    swap(a[i],a[rand()%(i+<span class="Constant">1</span>)]);
+<span id="L843" class="LineNr"> 843 </span>  }
+<span id="L844" class="LineNr"> 844 </span>}
+<span id="L845" class="LineNr"> 845 </span>
+<span id="L846" class="LineNr"> 846 </span><span class="Constant">34.</span>单链表快排
+<span id="L847" class="LineNr"> 847 </span>ListNode* getpartions(ListNode* pbeg,ListNode* pend)
+<span id="L848" class="LineNr"> 848 </span>{
+<span id="L849" class="LineNr"> 849 </span>  <span class="Type">int</span> k=pbeg-&gt;val;
+<span id="L850" class="LineNr"> 850 </span>  ListNode* p=pbeg;
+<span id="L851" class="LineNr"> 851 </span>  ListNode* q=p-&gt;next;
+<span id="L852" class="LineNr"> 852 </span>  <span class="Statement">while</span>(q!=pend)
+<span id="L853" class="LineNr"> 853 </span>  {
+<span id="L854" class="LineNr"> 854 </span>    <span class="Statement">if</span>(q-&gt;val&lt;k)
+<span id="L855" class="LineNr"> 855 </span>    {
+<span id="L856" class="LineNr"> 856 </span>      p=p-&gt;next;
+<span id="L857" class="LineNr"> 857 </span>      swap(p-&gt;val,q-&gt;val);
+<span id="L858" class="LineNr"> 858 </span>    }
+<span id="L859" class="LineNr"> 859 </span>    q=q-&gt;next;
+<span id="L860" class="LineNr"> 860 </span>  }
+<span id="L861" class="LineNr"> 861 </span>  swap(p-&gt;val,pbeg-&gt;val);
+<span id="L862" class="LineNr"> 862 </span>  <span class="Statement">return</span> p;
+<span id="L863" class="LineNr"> 863 </span>}
+<span id="L864" class="LineNr"> 864 </span><span class="Type">void</span> quickSort(ListNode* pbeg,ListNode* pend)
+<span id="L865" class="LineNr"> 865 </span>{
+<span id="L866" class="LineNr"> 866 </span>  <span class="Statement">if</span>(pbeg!=pend)
+<span id="L867" class="LineNr"> 867 </span>  {
+<span id="L868" class="LineNr"> 868 </span>    ListNode* partitions=getpartions(pbeg,pend);
+<span id="L869" class="LineNr"> 869 </span>    quickSort(pbeg,partition);
+<span id="L870" class="LineNr"> 870 </span>    quickSort(partition-&gt;next,pend);
+<span id="L871" class="LineNr"> 871 </span>  }
+<span id="L872" class="LineNr"> 872 </span>}
+<span id="L873" class="LineNr"> 873 </span>
+<span id="L874" class="LineNr"> 874 </span>quickSort(head,<span class="Constant">NULL</span>);
+<span id="L875" class="LineNr"> 875 </span>
+<span id="L876" class="LineNr"> 876 </span><span class="Constant">35.</span>反转链表
+<span id="L877" class="LineNr"> 877 </span>ListNode* reverseList(ListNode* pHead)
+<span id="L878" class="LineNr"> 878 </span>{
+<span id="L879" class="LineNr"> 879 </span>  <span class="Statement">if</span>(!pHead||!pHead-&gt;next)
+<span id="L880" class="LineNr"> 880 </span>    <span class="Statement">return</span> pHead;
+<span id="L881" class="LineNr"> 881 </span>  ListNode* p=pHead-&gt;next,*pre=pHead;
+<span id="L882" class="LineNr"> 882 </span>  <span class="Statement">while</span>(p)
+<span id="L883" class="LineNr"> 883 </span>  {
+<span id="L884" class="LineNr"> 884 </span>    pre-&gt;next=p-&gt;next;
+<span id="L885" class="LineNr"> 885 </span>    p-&gt;next=pHead;
+<span id="L886" class="LineNr"> 886 </span>    pHead=p;
+<span id="L887" class="LineNr"> 887 </span>    p=p-&gt;next;
+<span id="L888" class="LineNr"> 888 </span>  }
+<span id="L889" class="LineNr"> 889 </span>  <span class="Statement">return</span> pHead;
+<span id="L890" class="LineNr"> 890 </span>}
+<span id="L891" class="LineNr"> 891 </span>
+<span id="L892" class="LineNr"> 892 </span>递归版
+<span id="L893" class="LineNr"> 893 </span>ListNode* reverseList(ListNode* pHead)
+<span id="L894" class="LineNr"> 894 </span>{
+<span id="L895" class="LineNr"> 895 </span>  <span class="Statement">if</span>(!pHead||!pHead-&gt;next)
+<span id="L896" class="LineNr"> 896 </span>    <span class="Statement">return</span> pHead;
+<span id="L897" class="LineNr"> 897 </span>  ListNode* pReverseNode=reverseList(pHead-&gt;next);
+<span id="L898" class="LineNr"> 898 </span>  pHead-&gt;next-&gt;next=pHead;
+<span id="L899" class="LineNr"> 899 </span>  pHead-&gt;next=<span class="Constant">NULL</span>;
+<span id="L900" class="LineNr"> 900 </span>  <span class="Statement">return</span> pReverseNode;
+<span id="L901" class="LineNr"> 901 </span>}
+<span id="L902" class="LineNr"> 902 </span>
+<span id="L903" class="LineNr"> 903 </span><span class="Constant">36.</span>数据流中的中位数
+<span id="L904" class="LineNr"> 904 </span>将数据平均分配到最小堆、最大堆中
+<span id="L905" class="LineNr"> 905 </span>维持大顶堆中的数&lt;=小顶堆中的数，且两者的个数相等或差<span class="Constant">1</span>
+<span id="L906" class="LineNr"> 906 </span>
+<span id="L907" class="LineNr"> 907 </span>priorty_queue&lt;<span class="Type">int</span>,vector&lt;<span class="Type">int</span>&gt;,less&lt;<span class="Type">int</span>&gt;&gt; maxHeap;
+<span id="L908" class="LineNr"> 908 </span>priorty_queue&lt;<span class="Type">int</span>,vector&lt;<span class="Type">int</span>&gt;,greater&lt;<span class="Type">int</span>&gt;&gt; minHeap;
+<span id="L909" class="LineNr"> 909 </span><span class="Type">int</span> cnt=<span class="Constant">0</span>;
+<span id="L910" class="LineNr"> 910 </span><span class="Type">void</span> insert(<span class="Type">int</span> num)
+<span id="L911" class="LineNr"> 911 </span>{
+<span id="L912" class="LineNr"> 912 </span>  <span class="Statement">if</span>(cnt%<span class="Constant">2</span>==<span class="Constant">0</span>)
+<span id="L913" class="LineNr"> 913 </span>  {
+<span id="L914" class="LineNr"> 914 </span>    <span class="Statement">if</span>(maxHeap.size()&gt;<span class="Constant">0</span>&amp;&amp;num&lt;maxHeap.top())
+<span id="L915" class="LineNr"> 915 </span>    {
+<span id="L916" class="LineNr"> 916 </span>      maxHeap.push(num);
+<span id="L917" class="LineNr"> 917 </span>      num=maxHeap.top();
+<span id="L918" class="LineNr"> 918 </span>      maxHeap.pop();
+<span id="L919" class="LineNr"> 919 </span>    }
+<span id="L920" class="LineNr"> 920 </span>    minHeap.push(num);
+<span id="L921" class="LineNr"> 921 </span>  }
+<span id="L922" class="LineNr"> 922 </span>  <span class="Statement">else</span>
+<span id="L923" class="LineNr"> 923 </span>  {
+<span id="L924" class="LineNr"> 924 </span>    <span class="Statement">if</span>(minHeap.size()&gt;<span class="Constant">0</span>&amp;&amp;minHeap.top()&lt;num)
+<span id="L925" class="LineNr"> 925 </span>    {
+<span id="L926" class="LineNr"> 926 </span>      minHeap.push(num);
+<span id="L927" class="LineNr"> 927 </span>      num=minHeap.top();
+<span id="L928" class="LineNr"> 928 </span>      minHeap.pop();
+<span id="L929" class="LineNr"> 929 </span>    }
+<span id="L930" class="LineNr"> 930 </span>    maxHeap.push(num);
+<span id="L931" class="LineNr"> 931 </span>  }
+<span id="L932" class="LineNr"> 932 </span>  cnt++;
+<span id="L933" class="LineNr"> 933 </span>}
+<span id="L934" class="LineNr"> 934 </span>
+<span id="L935" class="LineNr"> 935 </span><span class="Type">int</span> getMedian()
+<span id="L936" class="LineNr"> 936 </span>{
+<span id="L937" class="LineNr"> 937 </span>  <span class="Statement">if</span>(cnt%<span class="Constant">2</span>==<span class="Constant">0</span>)
+<span id="L938" class="LineNr"> 938 </span>    <span class="Statement">return</span> (minHeap.top()+maxHeap.top())/<span class="Constant">2</span>;
+<span id="L939" class="LineNr"> 939 </span>  <span class="Statement">return</span> minHeap.top();
+<span id="L940" class="LineNr"> 940 </span>}
+<span id="L941" class="LineNr"> 941 </span>
+<span id="L942" class="LineNr"> 942 </span><span class="Constant">37.</span>和为s的连续正数序列
+<span id="L943" class="LineNr"> 943 </span>vector&lt;vector&lt;<span class="Type">int</span>&gt;&gt; findContinuousSeq(<span class="Type">int</span> sum)
+<span id="L944" class="LineNr"> 944 </span>{
+<span id="L945" class="LineNr"> 945 </span>  vector&lt;vector&lt;<span class="Type">int</span>&gt;&gt; ret;
+<span id="L946" class="LineNr"> 946 </span>  <span class="Type">int</span> l=<span class="Constant">1</span>,h=<span class="Constant">2</span>;
+<span id="L947" class="LineNr"> 947 </span>  <span class="Statement">while</span>(l&lt;h)
+<span id="L948" class="LineNr"> 948 </span>  {
+<span id="L949" class="LineNr"> 949 </span>    <span class="Type">int</span> cur=(h+l)*(h-l+<span class="Constant">1</span>)/<span class="Constant">2</span>;
+<span id="L950" class="LineNr"> 950 </span>    <span class="Statement">if</span>(cur&lt;sum)
+<span id="L951" class="LineNr"> 951 </span>      h++;
+<span id="L952" class="LineNr"> 952 </span>    <span class="Statement">if</span>(cur==sum)
+<span id="L953" class="LineNr"> 953 </span>    {
+<span id="L954" class="LineNr"> 954 </span>      vector&lt;<span class="Type">int</span>&gt; tmp;
+<span id="L955" class="LineNr"> 955 </span>      <span class="Statement">for</span>(<span class="Type">int</span> i=l;i&lt;=h;i++)
+<span id="L956" class="LineNr"> 956 </span>        tmp.push_back(i);
+<span id="L957" class="LineNr"> 957 </span>      ret.push_back(tmp);
+<span id="L958" class="LineNr"> 958 </span>      l++;
+<span id="L959" class="LineNr"> 959 </span>    }
+<span id="L960" class="LineNr"> 960 </span>    <span class="Statement">if</span>(cur&gt;sum)
+<span id="L961" class="LineNr"> 961 </span>      l++;
+<span id="L962" class="LineNr"> 962 </span>  }
+<span id="L963" class="LineNr"> 963 </span>  <span class="Statement">return</span> ret;
+<span id="L964" class="LineNr"> 964 </span>}
+<span id="L965" class="LineNr"> 965 </span>
+<span id="L966" class="LineNr"> 966 </span><span class="Constant">38.</span>正则表达式匹配
+<span id="L967" class="LineNr"> 967 </span>例：aaa与a.a和ab*ac*a匹配，与aa.a及ab*a不匹配
+<span id="L968" class="LineNr"> 968 </span><span class="Type">bool</span> match(<span class="Type">char</span>* str,<span class="Type">char</span>* pattern)
+<span id="L969" class="LineNr"> 969 </span>{
+<span id="L970" class="LineNr"> 970 </span>  <span class="Statement">if</span>(pattern[<span class="Constant">0</span>]==<span class="Constant">0</span>&amp;&amp;str[<span class="Constant">0</span>]==<span class="Constant">0</span>)
+<span id="L971" class="LineNr"> 971 </span>    <span class="Statement">return</span> <span class="Constant">true</span>;
+<span id="L972" class="LineNr"> 972 </span>  <span class="Statement">if</span>(pattern[<span class="Constant">0</span>]!=<span class="Constant">0</span>&amp;&amp;pattern[<span class="Constant">1</span>]==<span class="Constant">'*'</span>)
+<span id="L973" class="LineNr"> 973 </span>  {
+<span id="L974" class="LineNr"> 974 </span>    <span class="Statement">if</span>(match(str,pattern+<span class="Constant">2</span>))
+<span id="L975" class="LineNr"> 975 </span>      <span class="Statement">return</span> <span class="Constant">true</span>;
+<span id="L976" class="LineNr"> 976 </span>  }
+<span id="L977" class="LineNr"> 977 </span>  <span class="Statement">if</span>((pattern[<span class="Constant">0</span>]==<span class="Constant">'.'</span>&amp;&amp;str[<span class="Constant">0</span>])||str[<span class="Constant">0</span>]==pattern[<span class="Constant">0</span>])
+<span id="L978" class="LineNr"> 978 </span>  {
+<span id="L979" class="LineNr"> 979 </span>    <span class="Statement">if</span>(match(str+<span class="Constant">1</span>,pattern+<span class="Constant">1</span>))
+<span id="L980" class="LineNr"> 980 </span>      <span class="Statement">return</span> <span class="Constant">true</span>;
+<span id="L981" class="LineNr"> 981 </span>    <span class="Statement">if</span>(pattern[<span class="Constant">1</span>]==<span class="Constant">'*'</span>&amp;&amp;match(str+<span class="Constant">1</span>,pattern))
+<span id="L982" class="LineNr"> 982 </span>      <span class="Statement">return</span>  <span class="Constant">true</span>;
+<span id="L983" class="LineNr"> 983 </span>  }
+<span id="L984" class="LineNr"> 984 </span>  <span class="Statement">return</span> <span class="Constant">false</span>;
+<span id="L985" class="LineNr"> 985 </span>}
+<span id="L986" class="LineNr"> 986 </span>
+<span id="L987" class="LineNr"> 987 </span><span class="Constant">39.</span>链表中环的入口节点
+<span id="L988" class="LineNr"> 988 </span>ListNode *meetingNode(ListNode* head)
+<span id="L989" class="LineNr"> 989 </span>{
+<span id="L990" class="LineNr"> 990 </span>  <span class="Statement">if</span>(!head)
+<span id="L991" class="LineNr"> 991 </span>    <span class="Statement">return</span> <span class="Constant">NULL</span>;
+<span id="L992" class="LineNr"> 992 </span>  ListNode* pSlow=head-&gt;next;
+<span id="L993" class="LineNr"> 993 </span>  <span class="Statement">if</span>(!pSlow)
+<span id="L994" class="LineNr"> 994 </span>    <span class="Statement">return</span> <span class="Constant">NULL</span>;
+<span id="L995" class="LineNr"> 995 </span>  ListNode* pFast=pSlow-&gt;next;
+<span id="L996" class="LineNr"> 996 </span>  <span class="Statement">while</span>(pFast&amp;&amp;pSlow)
+<span id="L997" class="LineNr"> 997 </span>  {
+<span id="L998" class="LineNr"> 998 </span>    <span class="Statement">if</span>(pFast==pSlow)
+<span id="L999" class="LineNr"> 999 </span>        <span class="Statement">return</span> pFast;
+<span id="L1000" class="LineNr">1000 </span>    pSlow=pSlow-&gt;next;
+<span id="L1001" class="LineNr">1001 </span>    pFast=pFast-&gt;next;
+<span id="L1002" class="LineNr">1002 </span>    <span class="Statement">if</span>(pFast)
+<span id="L1003" class="LineNr">1003 </span>      pFast=pFast-&gt;next;
+<span id="L1004" class="LineNr">1004 </span>  }
+<span id="L1005" class="LineNr">1005 </span>  <span class="Statement">return</span> <span class="Constant">NULL</span>;
+<span id="L1006" class="LineNr">1006 </span>}
+<span id="L1007" class="LineNr">1007 </span>
+<span id="L1008" class="LineNr">1008 </span>ListNode* entryNodeOfLoop(ListNode* head)
+<span id="L1009" class="LineNr">1009 </span>{
+<span id="L1010" class="LineNr">1010 </span>  ListNode* meetingNode=meetingNode(head);
+<span id="L1011" class="LineNr">1011 </span>  <span class="Statement">if</span>(!meetingNode)
+<span id="L1012" class="LineNr">1012 </span>    <span class="Statement">return</span> <span class="Constant">NULL</span>;
+<span id="L1013" class="LineNr">1013 </span>  <span class="Type">int</span> circle=<span class="Constant">1</span>;
+<span id="L1014" class="LineNr">1014 </span>  ListNode* p1=meetingNode;
+<span id="L1015" class="LineNr">1015 </span>  <span class="Statement">while</span>(p1-&gt;next!=meetingNode)
+<span id="L1016" class="LineNr">1016 </span>  {
+<span id="L1017" class="LineNr">1017 </span>    p1=p1-&gt;next;
+<span id="L1018" class="LineNr">1018 </span>    circle++;
+<span id="L1019" class="LineNr">1019 </span>  }
+<span id="L1020" class="LineNr">1020 </span>  p1=head;
+<span id="L1021" class="LineNr">1021 </span>  <span class="Statement">for</span>(<span class="Type">int</span> i=<span class="Constant">0</span>;i&lt;circle;i++)
+<span id="L1022" class="LineNr">1022 </span>    p1=p1-&gt;next;
+<span id="L1023" class="LineNr">1023 </span>  ListNode* p2=head;
+<span id="L1024" class="LineNr">1024 </span>  <span class="Statement">while</span>(p1!=p2)
+<span id="L1025" class="LineNr">1025 </span>  {
+<span id="L1026" class="LineNr">1026 </span>    p1=p1-&gt;next;
+<span id="L1027" class="LineNr">1027 </span>    p2=p2-&gt;next;
+<span id="L1028" class="LineNr">1028 </span>  }
+<span id="L1029" class="LineNr">1029 </span>  <span class="Statement">return</span> p1;
+<span id="L1030" class="LineNr">1030 </span>}
+<span id="L1031" class="LineNr">1031 </span>
+<span id="L1032" class="LineNr">1032 </span><span class="Constant">40.</span>和为s的两个数字
+<span id="L1033" class="LineNr">1033 </span>递增排序的数组
+<span id="L1034" class="LineNr">1034 </span>vector&lt;<span class="Type">int</span>&gt; twoSum(vector&lt;<span class="Type">int</span>&gt; arr,<span class="Type">int</span> sum)
+<span id="L1035" class="LineNr">1035 </span>{
+<span id="L1036" class="LineNr">1036 </span>  vector&lt;<span class="Type">int</span>&gt; result;
+<span id="L1037" class="LineNr">1037 </span>  <span class="Type">int</span> length=arr.size();
+<span id="L1038" class="LineNr">1038 </span>  <span class="Type">int</span> start=<span class="Constant">0</span>;
+<span id="L1039" class="LineNr">1039 </span>  <span class="Type">int</span> end=length-<span class="Constant">1</span>;
+<span id="L1040" class="LineNr">1040 </span>  <span class="Statement">while</span>(start&lt;end)
+<span id="L1041" class="LineNr">1041 </span>  {
+<span id="L1042" class="LineNr">1042 </span>    <span class="Statement">if</span>(arr[start]+arr[end]==sum)
+<span id="L1043" class="LineNr">1043 </span>    {
+<span id="L1044" class="LineNr">1044 </span>      result.push_back(arr[start]);
+<span id="L1045" class="LineNr">1045 </span>      result.push_back(arr[end]);
+<span id="L1046" class="LineNr">1046 </span>    }
+<span id="L1047" class="LineNr">1047 </span>    <span class="Statement">else</span> <span class="Statement">if</span>(arr[start]+arr[end]&lt;sum)
+<span id="L1048" class="LineNr">1048 </span>      start++;
+<span id="L1049" class="LineNr">1049 </span>    <span class="Statement">else</span>
+<span id="L1050" class="LineNr">1050 </span>      end--;
+<span id="L1051" class="LineNr">1051 </span>  }
+<span id="L1052" class="LineNr">1052 </span>  <span class="Statement">return</span> result;
+<span id="L1053" class="LineNr">1053 </span>}
+<span id="L1054" class="LineNr">1054 </span>
+<span id="L1055" class="LineNr">1055 </span><span class="Constant">41.</span>N皇后
+<span id="L1056" class="LineNr">1056 </span><span class="Type">bool</span> isvalid(<span class="Type">int</span> R[],<span class="Type">int</span> i,<span class="Type">int</span> j)
+<span id="L1057" class="LineNr">1057 </span>{
+<span id="L1058" class="LineNr">1058 </span>  <span class="Statement">for</span>(<span class="Type">int</span> k=<span class="Constant">0</span>;k&lt;i;k++)
+<span id="L1059" class="LineNr">1059 </span>  {
+<span id="L1060" class="LineNr">1060 </span>    <span class="Statement">if</span>(j==R[k]||abs(k-i)==abs(R[k]-j))
+<span id="L1061" class="LineNr">1061 </span>      <span class="Statement">return</span> <span class="Constant">false</span>;
+<span id="L1062" class="LineNr">1062 </span>  }
+<span id="L1063" class="LineNr">1063 </span>  <span class="Statement">return</span> <span class="Constant">true</span>;
+<span id="L1064" class="LineNr">1064 </span>}
+<span id="L1065" class="LineNr">1065 </span><span class="Type">int</span> process(<span class="Type">int</span> R[],<span class="Type">int</span> i,<span class="Type">int</span> n)
+<span id="L1066" class="LineNr">1066 </span>{
+<span id="L1067" class="LineNr">1067 </span>  <span class="Statement">if</span>(i==n)
+<span id="L1068" class="LineNr">1068 </span>    <span class="Statement">return</span> <span class="Constant">1</span>;
+<span id="L1069" class="LineNr">1069 </span>  <span class="Type">int</span> res=<span class="Constant">0</span>;
+<span id="L1070" class="LineNr">1070 </span>  <span class="Statement">for</span>(<span class="Type">int</span> j=<span class="Constant">0</span>;j&lt;n;j++)
+<span id="L1071" class="LineNr">1071 </span>  {
+<span id="L1072" class="LineNr">1072 </span>    <span class="Statement">if</span>(isValid(R,i,j))
+<span id="L1073" class="LineNr">1073 </span>    {
+<span id="L1074" class="LineNr">1074 </span>      R[i]=j;
+<span id="L1075" class="LineNr">1075 </span>      res+=process(R,i+<span class="Constant">1</span>,n);
+<span id="L1076" class="LineNr">1076 </span>    }
+<span id="L1077" class="LineNr">1077 </span>  }
+<span id="L1078" class="LineNr">1078 </span>  <span class="Statement">return</span> res;
+<span id="L1079" class="LineNr">1079 </span>}
+<span id="L1080" class="LineNr">1080 </span>
+<span id="L1081" class="LineNr">1081 </span><span class="Constant">42.</span>序列化和反序列化二叉树
+<span id="L1082" class="LineNr">1082 </span><span class="Type">char</span>* serialize(TreeNode* root)
+<span id="L1083" class="LineNr">1083 </span>{
+<span id="L1084" class="LineNr">1084 </span>  <span class="Statement">if</span>(!root)
+<span id="L1085" class="LineNr">1085 </span>    <span class="Statement">return</span> <span class="Constant">&quot;#&quot;</span>;
+<span id="L1086" class="LineNr">1086 </span>  string s=to_string(root-&gt;left);
+<span id="L1087" class="LineNr">1087 </span>  s+=<span class="Constant">&quot;,&quot;</span>;
+<span id="L1088" class="LineNr">1088 </span>  <span class="Type">char</span>* left=serialize(root-&gt;left);
+<span id="L1089" class="LineNr">1089 </span>  <span class="Type">char</span>* right=serialize(root-&gt;right);
+<span id="L1090" class="LineNr">1090 </span>  <span class="Type">char</span>* ans=<span class="Statement">new</span> <span class="Type">char</span>[strlen(left)+strlen(right)+s.size()];
+<span id="L1091" class="LineNr">1091 </span>  strcpy(ans,s.c_str());
+<span id="L1092" class="LineNr">1092 </span>  strcat(ans,left);
+<span id="L1093" class="LineNr">1093 </span>  strcat(ans,right);
+<span id="L1094" class="LineNr">1094 </span>  <span class="Statement">return</span> ans;
+<span id="L1095" class="LineNr">1095 </span>}
+<span id="L1096" class="LineNr">1096 </span>
+<span id="L1097" class="LineNr">1097 </span><span class="Type">char</span>* rstr;
+<span id="L1098" class="LineNr">1098 </span>TreeNode* Deserialize(<span class="Type">char</span>* str)
+<span id="L1099" class="LineNr">1099 </span>{
+<span id="L1100" class="LineNr">1100 </span>  rstr=str;
+<span id="L1101" class="LineNr">1101 </span>  <span class="Statement">if</span>(*rstr==<span class="Constant">'#'</span>)
+<span id="L1102" class="LineNr">1102 </span>  {
+<span id="L1103" class="LineNr">1103 </span>    rstr++;
+<span id="L1104" class="LineNr">1104 </span>    <span class="Statement">return</span> <span class="Constant">NULL</span>;
+<span id="L1105" class="LineNr">1105 </span>  }
+<span id="L1106" class="LineNr">1106 </span>  <span class="Type">int</span> val=<span class="Constant">0</span>;
+<span id="L1107" class="LineNr">1107 </span>  <span class="Statement">while</span>(*rstr!=<span class="Constant">','</span>)
+<span id="L1108" class="LineNr">1108 </span>  {
+<span id="L1109" class="LineNr">1109 </span>    val=val*<span class="Constant">10</span>+*rstr-<span class="Constant">'0'</span>;
+<span id="L1110" class="LineNr">1110 </span>    rstr++;
+<span id="L1111" class="LineNr">1111 </span>  }
+<span id="L1112" class="LineNr">1112 </span>  rstr++;
+<span id="L1113" class="LineNr">1113 </span>  TreeNode* root=<span class="Statement">new</span> TreeNode(val);
+<span id="L1114" class="LineNr">1114 </span>  root-&gt;left=Deserialize(rstr);
+<span id="L1115" class="LineNr">1115 </span>  root-&gt;right=Deserialize(rstr);
+<span id="L1116" class="LineNr">1116 </span>  <span class="Statement">return</span> root;
+<span id="L1117" class="LineNr">1117 </span>}
+<span id="L1118" class="LineNr">1118 </span>
+<span id="L1119" class="LineNr">1119 </span><span class="Constant">43.</span>未排序正数数组中累加和为给定值的最长子数组长度
+<span id="L1120" class="LineNr">1120 </span>arr:<span class="Constant">1</span>,<span class="Constant">2</span>,<span class="Constant">1</span>,<span class="Constant">1</span>,<span class="Constant">1</span>  k=<span class="Constant">3</span>
+<span id="L1121" class="LineNr">1121 </span>返回:<span class="Constant">3</span>
+<span id="L1122" class="LineNr">1122 </span><span class="Type">int</span> getMaxLength(<span class="Type">int</span> arr[],<span class="Type">int</span> n,<span class="Type">int</span> k)
+<span id="L1123" class="LineNr">1123 </span>{
+<span id="L1124" class="LineNr">1124 </span>  <span class="Statement">if</span>(n&lt;=<span class="Constant">0</span>||k&lt;=<span class="Constant">0</span>)
+<span id="L1125" class="LineNr">1125 </span>    <span class="Statement">return</span> <span class="Constant">0</span>;
+<span id="L1126" class="LineNr">1126 </span>  <span class="Type">int</span> l=<span class="Constant">0</span>,r=<span class="Constant">0</span>;
+<span id="L1127" class="LineNr">1127 </span>  <span class="Type">int</span> sum=arr[<span class="Constant">0</span>];
+<span id="L1128" class="LineNr">1128 </span>  <span class="Type">int</span> len=<span class="Constant">0</span>;
+<span id="L1129" class="LineNr">1129 </span>  <span class="Statement">while</span>(r&lt;n)
+<span id="L1130" class="LineNr">1130 </span>  {
+<span id="L1131" class="LineNr">1131 </span>    <span class="Statement">if</span>(sum==k)
+<span id="L1132" class="LineNr">1132 </span>    {
+<span id="L1133" class="LineNr">1133 </span>      len=max(len,r-l+<span class="Constant">1</span>);
+<span id="L1134" class="LineNr">1134 </span>      sum-=arr[l++];
+<span id="L1135" class="LineNr">1135 </span>    }
+<span id="L1136" class="LineNr">1136 </span>    <span class="Statement">else</span> <span class="Statement">if</span>(sum&lt;k)
+<span id="L1137" class="LineNr">1137 </span>    {
+<span id="L1138" class="LineNr">1138 </span>      r++;
+<span id="L1139" class="LineNr">1139 </span>      <span class="Statement">if</span>(r==n)
+<span id="L1140" class="LineNr">1140 </span>        <span class="Statement">break</span>;
+<span id="L1141" class="LineNr">1141 </span>      sum+=arr[r];
+<span id="L1142" class="LineNr">1142 </span>    }
+<span id="L1143" class="LineNr">1143 </span>    <span class="Statement">else</span>
+<span id="L1144" class="LineNr">1144 </span>      sum-=arr[l++];
+<span id="L1145" class="LineNr">1145 </span>  }
+<span id="L1146" class="LineNr">1146 </span>}
+<span id="L1147" class="LineNr">1147 </span>
+<span id="L1148" class="LineNr">1148 </span><span class="Constant">44.</span>未排序数组中累加和为给定值的最长子数组系列问题
+<span id="L1149" class="LineNr">1149 </span>a.无序数组arr,元素可正、可负、可<span class="Constant">0</span>，给定一个整数k
+<span id="L1150" class="LineNr">1150 </span><span class="Type">int</span> maxLength(<span class="Type">int</span> arr[],<span class="Type">int</span> n,<span class="Type">int</span> k)
+<span id="L1151" class="LineNr">1151 </span>{
+<span id="L1152" class="LineNr">1152 </span>  <span class="Statement">if</span>(n==<span class="Constant">0</span>)
+<span id="L1153" class="LineNr">1153 </span>    <span class="Statement">return</span> <span class="Constant">0</span>;
+<span id="L1154" class="LineNr">1154 </span>  unordered_map&lt;<span class="Type">int</span>,<span class="Type">int</span>&gt; map;
+<span id="L1155" class="LineNr">1155 </span>  map[<span class="Constant">0</span>]=-<span class="Constant">1</span>;
+<span id="L1156" class="LineNr">1156 </span>  <span class="Type">int</span> len=<span class="Constant">0</span>;
+<span id="L1157" class="LineNr">1157 </span>  <span class="Type">int</span> sum=<span class="Constant">0</span>;
+<span id="L1158" class="LineNr">1158 </span>  <span class="Statement">for</span>(<span class="Type">int</span> i=<span class="Constant">0</span>;i&lt;n;i++)
+<span id="L1159" class="LineNr">1159 </span>  {
+<span id="L1160" class="LineNr">1160 </span>    sum+=arr[i];
+<span id="L1161" class="LineNr">1161 </span>    <span class="Statement">if</span>(map.find(sum-k)!=map.end())
+<span id="L1162" class="LineNr">1162 </span>      len=max(len,i-map[sum-k]);
+<span id="L1163" class="LineNr">1163 </span>    <span class="Statement">if</span>(map.find(sum)==map.end())
+<span id="L1164" class="LineNr">1164 </span>      map.put(sum,i);
+<span id="L1165" class="LineNr">1165 </span>  }
+<span id="L1166" class="LineNr">1166 </span>  <span class="Statement">return</span> len;
+<span id="L1167" class="LineNr">1167 </span>}
+<span id="L1168" class="LineNr">1168 </span>
+<span id="L1169" class="LineNr">1169 </span>b.求arr所有子数组中正数与负数个数相等的最长子数组长度
+<span id="L1170" class="LineNr">1170 </span>方法：整数全部变成<span class="Constant">1</span>，负数全部变成-<span class="Constant">1</span>,<span class="Constant">0</span>不变，然后求累加和为<span class="Constant">0</span>的最长子数组长度即可
+<span id="L1171" class="LineNr">1171 </span>
+<span id="L1172" class="LineNr">1172 </span>c.求arr中所有的子数组中<span class="Constant">0</span>和<span class="Constant">1</span>个数相等的最长子数组长度
+<span id="L1173" class="LineNr">1173 </span>方法：<span class="Constant">0</span>变成-<span class="Constant">1</span>,<span class="Constant">1</span>不变，求累加和为<span class="Constant">0</span>的最长子数组长度即可
+<span id="L1174" class="LineNr">1174 </span>
+<span id="L1175" class="LineNr">1175 </span><span class="Constant">45.</span>动态规划相关
+<span id="L1176" class="LineNr">1176 </span>背包问题系列
+<span id="L1177" class="LineNr">1177 </span>最长递增子序列
+<span id="L1178" class="LineNr">1178 </span>最长公共子序列
+<span id="L1179" class="LineNr">1179 </span>最长公共子串
+</pre>
+</body>
+</html>
+<!-- vim: set foldmethod=manual : -->

@@ -149,7 +149,7 @@
 
 [Q70.强类型、弱类型语言](#Q70)
 
-
+[Q71.C++ operator ->, ->\*, ., .\*](#Q71)
 
 ---
 
@@ -3114,3 +3114,8 @@ Plus：Volatile变量与非Volatile变量的顺序，编译器不保证顺序，
 强类型语言在没有强制类型转化前，不允许两种不同类型的变量相互操作。Java、C# 和 Python 等都是强类型语言。
 
 使用哪种语言还是要按需而定。编写简单小应用，使用弱类型语言可节省很多代码量，有更高的开发效率。而对于构建大型项目，使用强类型语言可能会比使用弱类型更加规范可靠。
+
+### Q71
+### C++ operator ->, ->\*, ., .\*
+
+See [stackoverflow](https://stackoverflow.com/questions/8777845/overloading-member-access-operators-c)
