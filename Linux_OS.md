@@ -2173,6 +2173,40 @@ thread_create:
 
 关闭文件描述符：for(int i = 0; i < 65535; ++i){close(i);}。
 
-### Q：CGI + Cookie + Session
+### Q：Linux 设备详解
 
-这一块 TK 巨巨讲的很好，参考：https://github.com/linw7/Skill-Tree/blob/master/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C.md
+参考：https://www.cnblogs.com/sammyliu/p/5729026.html
+
+Linux 操作系统中，各种设备驱动（device driver）通过设备控制器（device controller）来管理各种设备（device），其关系如下图所示：
+
+![](imgs/Linux_device_architecture.svg)
+
+这些设备之中，
+
+受同一个 device driver 管理的设备都有相同的 major number，这个数字可以看作设备的类别号码，被内核用于识别一类设备受同一个 device driver 管理的同一类设备中的每一个设备都有不同的 minor number，这个数字可以看作设备编号，被设备驱动用来识别每个设备
+设备驱动主要有三大类：
+
+- 面向包的网络设备驱动（package oriented network device driver）
+
+- 面向块的存储设备驱动（block oriented storage device driver），提供缓冲式（buffered）的设备访问。
+
+- 面向字节的字符设备驱动 （byte oriented char device driver），有时也称为裸设备（raw devices），提供非缓冲的直接的设备访问（unbuffered direct access），比如串口设备，摄像头，声音设备等。实际上，除了网络设备和存储设备以外的其它设备都是某种字符设备。
+
+- 除此以外，还有一类设备，称为伪设备（pseudo device），它们是软件设备。Linux 上的 device 不一定要有硬件设备，比如 /dev/null, /dev/zero 等。
+
+关于字符设备和块设备的更多区别：
+
+- 块设备只能以块为单位接受输入和返回输出，而字符设备则以字节为单位。大多数设备是字符设备，因为它们不需要缓冲而且不以固定块大小进行操作。
+
+- 块设备对于I/O 请求有对应的缓冲区，因此它们可以选择以什么顺序进行响应，字符设备无须缓冲且被直接读写。对于存储设备而言调 读写的顺序作用巨大，因为在读写连续的扇区比分离的扇区更快。
+字符设备只能被顺序读写，而块设备可以随机访问。虽然块设备可随机访问，但是对于磁盘这类机械设备而言，顺序地组织块设备的访问可以提高性能。
+用户空间的各种应用是通过 device driver 来操作设备的：
+
+
+从这个图上可以看出：
+
+- 网络设备驱动之上，分别有包调度器（packet scheduler），网络协议层（network protocols），NetFilter （防火墙）和 scoket 层，其中，网络设备驱动以 socket 作为应用层的接口
+
+- 块设备驱动之上，分别有 I/O Scheduler，通用块层（generic block layer）和文件系统，其中，块设备驱动以设备文件 （device file）作为应用层的接访问口
+
+- 字符设备驱动之上，分别有 Line discipline 和 terminals，其中，terminals 作为和应用的访问接口

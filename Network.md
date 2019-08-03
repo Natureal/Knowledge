@@ -797,3 +797,7 @@ B类：169.254.X.X（如果你的IP地址是自动获取IP地址，而你在网�
 ## Q：对 CDN 的理解
 
 CDN 的全称是 Content Delivery Network，即内容分发网络。
+
+## Q：CGI + Cookie + Session
+
+这一块 TK 巨巨讲的很好，参考：https://github.com/linw7/Skill-Tree/blob/master/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C.md

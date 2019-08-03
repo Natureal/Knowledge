@@ -1,8 +1,66 @@
-## 1. 查找目录下包含某个字符串的文件
+## Linux Shell 命令备忘录
 
-(1) grep -R "search_words" DIR
+Referrence：[Linux Tools Quick Tutorial](https://linuxtools-rst.readthedocs.io/zh_CN/latest/)
 
-如果搜索当前目录下包含 "my" 的文件：grep -R "my" .
+- 搜索文件夹下包含某字符串的所有文件
+
+  - grep -R "search_words" DIR
+
+  （如果搜索当前目录下包含 "my" 的文件：grep -R "my" .）
+
+- 搜索文件夹下名字中包含某字符串的所有文件
+
+  - find DIR -name "string"
+
+  （如果查找目标文件夹中是否有obj文件: find ./ -name '*.o'）
+
+- 每秒刷新 top
+
+  - top -d 1
+
+- 查看文件内容
+
+  - cat -n FILENAME（显示文件，加上行号）
+
+  - head -n FILENAME（显示文件前 n 行）
+
+  - tail -n FILENAME（显示文件倒数 n 行）
+
+  - diff FILE1 FILE2（比较两个文件的区别）
+
+- 修改文件（夹）权限
+
+  u 表示拥有者，g 表示同 group 者，o 表示其他人，a 表示所有人。
+
+  - chmod ugo+r a.sh（\+ 表示增加权限）
+
+  - chmod -R a+rw *（-R 表示递归地设置文件夹内的所有文件权限）
+
+  - chmod 777 FILE（等价于  chmod u=rwx,g=rwx,o=rwx file 或  chmod a=rwx file）
+
+- 修改文件（夹）拥有者
+
+  通常需要 root 权限
+
+  - chown tom:users file FILE1 FILE2（把两个文件的拥有者改为 users 下的 tom）
+
+  - chown -R James:users  *（设置当前目录下与子目录下的所有文件的拥有者为 users 群中的 James）
+
+- 列出文件夹内容
+
+  ls 出来最高位解释：
+
+  - d（目录），-（文件），s（套接字），p（（命令）管道文件），l（符号链接文件），b（面向块的设备文件），c（面向字符的设备文件）。
+
+  - ls -tlsa（-t（按照修改时间排序），l（用列表方式表示），s（显示文件大小），a（显示所有，包括隐藏文件）
+
+  - -S（按照大小排序）
+
+- 给文件增加别名（创建符号链接/硬链接）
+
+  - ln cc ccAgain :硬连接；删除一个，将仍能找到；
+  - ln -s cc ccTo :符号链接(软链接)；删除源，另一个无法使用；（后面一个ccTo 为新建的文件）
+
 
 ## 2. GDB 备忘录
 
@@ -74,9 +132,13 @@
 
 - （ix）EPOLLONESHOT 的实现原理？
 
-- （x）压力测试结果？为什么你的并发量大了吞吐量反而小了？（我：xxxx）
+- （x）压力测试结果？
 
-- （xi）定时器怎么实现的？
+- （xi）为什么你的并发量大了吞吐量反而小了？（我：xxxx）
+
+- （xii）CPU 跑满了吗？
+
+- （xiii）定时器怎么实现的？
 
 （4）问点 C++ 吧，多态怎么理解的？
 
