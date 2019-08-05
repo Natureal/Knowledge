@@ -162,7 +162,7 @@ Referrence：[Linux Tools Quick Tutorial](https://linuxtools-rst.readthedocs.io/
 
 时间：2h19min
 
-找的牛客网的老哥内推的，感觉真的很靠谱。内推开放后很快就面试了。可以说是我经历长的一面...
+找的牛客网的老哥内推的，感觉真的很靠谱。内推开放后很快就面试了。可以说是我经历最长的一面...
 
 面试官人很好，很有耐心，我有不会他也给了我解答。
 
