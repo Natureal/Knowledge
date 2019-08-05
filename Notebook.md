@@ -200,7 +200,7 @@ Referrence：[Linux Tools Quick Tutorial](https://linuxtools-rst.readthedocs.io/
 
 - （xiii）memmove 和 memcpy 的内存覆盖问题？（这个记反了，笑哭）
 
-- 这一块我在回答的时候都尽量全面了，所以覆盖了很多其他可能会问的问题，比如智能指针、brk/sbrk、epoll 底层原理、select 底层原理、引用的底层实现、内核栈的分布、内核态用户态等。
+- 这一块我在回答的时候都尽量全面了，所以覆盖了一些其他可能会问的问题，比如智能指针、brk/sbrk、epoll 底层原理、select 底层原理、引用的底层实现、内核栈的分布、内核态用户态等。
 
 （5）问算法
 
