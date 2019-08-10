@@ -5,7 +5,7 @@
 参考2：《STL源码剖析》
 
 待参考：《Effective C++》
-
+f
 ---
 [Q1.面向对象的特征](#Q1)
 
@@ -2113,24 +2113,73 @@ auto fcn(It beg, It end) -> decltype(*beg){
 ### Q47
 ### RTTI（Run Time Type Identification）
 
-RTTI的功能由两个运算符实现：
+运行时类型检查，实际上是 C/C++ 实现多态的基础。
+
+当RTTI用于类指针/引用，且类含有虚函数时，使用的是动态类型。
 
 （1）typeid，返回表达式的类型
 
 ```cpp
-if(typeif(*p) == typeif(Derived)){
+if(typeid(*p) == typeid(Derived)){
   // ...
 }
 ```
 
-（2）dynamic_cast，用于将基类的指针或引用安全地转换成派生类的指针或引用
+（2）static_cast，相当于 C 语言里的强制类型转换。
 
-```cpp
-Base *bp;
-Derived *dp = dynamic_cast<Derived*>(bp);
+会在编译时期检查，没有运行时检查来保证转换的安全性。
+
+使用场景（不能转换掉 const、volatile 类型）：
+
+  - （i）进行上行转换（派生类指针/引用换成基类的），是安全的。
+
+  - （ii）进行下行转换（基类指针/引用换成派生类的），没有动态类型检查，是不安全的。（不应该使用）
+
+  - （iii）用于基本数据类型之间的转换，如 int -> char。
+
+  - （iv）空指针转换为目标类型的空指针。
+
+  - （v）任何类型转换为 void 类型。
+
+（3）dynamic_cast，用于将基类的指针或引用安全地转换成派生类的指针或引用
+
+```
+dynamic_cast<type*>(expr) // expr：指针
+dynamic_cast<type&>(expr) // expr：左值
+dynamic_cast<type&&>(expr) // expr：右值
 ```
 
-当RTTI用于类指针/引用，且类含有虚函数时，使用的是动态类型。
+如果 dynamic_cast 转换指针失败了，则结果为 NULL 指针；如果转换引用失败了，则抛出一个 std::bad_cast 异常（定义在 typeinfo）。
+
+```cpp
+Derived x;
+Base *bp = &x;
+// 此时可以安全地把 bp 转换为指向 Derived 对象的指针。
+if(Derived *dp = dynamic_cast<Derived*>(bp)){
+  //...
+}
+else{
+  //...
+}
+// =============================================
+Base &cp = x;
+try{
+  Derived &ep = dynamic_cast<Derived &>(cp);
+  // ...
+}catch(std::bad_cast){
+  // ...
+}
+
+```
+
+使用场景：
+
+  - （i）进行上行转换，和 static_cast 效果一致。
+
+  - （ii）进行下行转换时，具有类型检查的功能，更安全。（可能耗费重大运行成本，因此尽量少用）
+
+
+
 
 ### Q48
 ### extern "C"
