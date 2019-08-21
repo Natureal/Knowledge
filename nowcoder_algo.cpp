@@ -152,17 +152,26 @@ singleton* singleton::getInstance()
 
 7.堆排序
 void heapAdjust(int R[],int l,int h)
-{  int i=l;  int j=2*i;  int temp=R[i];  while(j<=h)  {  if(j<h&&R[j]<R[j+1])
-        j++;  if(temp<R[j])  {  R[i]=R[j];  i=j;  j=2*i;
-      }
-      else
-       break;
+{   int i=l;  
+	int j=2*i;
+	int temp=R[i];
+	while(j<=h){
+		if(j<h&&R[j]<R[j+1])
+        j++;  
+		if(temp<R[j]){
+			R[i]=R[j];
+			i=j;
+			j=2*i;
+		}
+		else
+			break;
   }
   R[i]=temp;
 }
 
 void heapSort(int R[],int n)
-{  for(int i=n/2-1;i>=0;i--)  heapAdjust(R,i,n-1);   //初始建堆  for(int j=n-1;j>=1;j--)  {  swap(R[1],R[j]);  heapAdjust(R,0,j-1)
+{  for(int i=n/2-1;i>=0;i--)
+	heapAdjust(R,i,n-1);   //初始建堆  for(int j=n-1;j>=1;j--)  {  swap(R[1],R[j]);  heapAdjust(R,0,j-1)
   }
 }
 

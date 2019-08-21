@@ -153,6 +153,19 @@
 
 ---
 
+### Common knowledge
+
+**1. 编译型语言 / 解释型语言**
+
+（1）编译型语言：在程序执行前需要翻译成机器语言，运行时直接跑。C, C++, Pascal, Golang
+
+- 执行速度快，效率高，依靠编译器，跨平台性能差。
+
+（2）解释型语言：无需编译，在运行时才翻译成机器语言。Java, C#, PHP, JS, Python, Ruby, Matlab
+
+其中 Java 是个特例，.java 先编译成 .class 字节码，在运行时由 JVM 翻译成机器语言。
+
+- 执行速度慢，效率低，依靠解释器，跨平台性能好。
 
 ### Q1
 ### 面向对象的特征
@@ -435,6 +448,7 @@ void f3(destination &d /* 其他参数 */){
 ```cpp
 #include <string>
 #include <iostream>
+#include <atomic>
 using namespace std;
 
 template <typename T>
@@ -483,7 +497,7 @@ public:
   int use_count() { return *count; }
 
 private:
-  int *count; // the number of reference(s)
+  std::atomic<int> *count; // the number of reference(s)
   T* ptr;
 }
 ```
