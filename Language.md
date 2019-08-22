@@ -348,6 +348,18 @@ for(size_t i = 0; i != 10; ++i){
 
 - **weak_ptr**
 
+![](imgs/recurrent_shared_ptr.png)
+
+存在的意义：为了解决 shared_ptr 循环引用造成的问题。
+
+如上图，shared_ptr<T> spA, spB 分别指向两个 T 对象，同时 T 对象中的 Obj A，B 中的 shared_ptr 相互引用，导致 spA， spB 在析构时，它们所指的 T 对象的 ref_count 不会零，内存泄露。
+
+将 obj A，B 中的指针换成 weak_ptr 就没有这样的问题，因为其不会改变 shared_ptr 的引用计数。
+
+额外的使用方式：使用 weak_ptr.use_count() 作为内存泄露核查器，在析构后，如果引用计数还不为 0，则出现了内存泄露。
+
+---
+
 weak_ptr 指向一个由 shared_ptr 管理的对象，但不会改变 shared_ptr 的引用计数。
 
 且 shared_ptr 引用计数归零要释放对象时，不会管有没有 weak_ptr 指向该对象。
@@ -607,7 +619,7 @@ private:
   T* elements; // 指向首元素的指针
   T* first_free; // 指向第一个空间元素的指针
   T* cap; // 指向尾巴后一个位置的指针
-}
+};
 
 template<typename T>
 void
@@ -731,7 +743,9 @@ Vec::operator = (Vec<T>&& copy) noexcept{
 
 // push_back
 template<typename T>
-void
+void name(/* arguments */) {
+  /* code */
+}
 Vec::push_back(const T& s){
   chk_n_alloc();
   alloc.construct(first_free++, s);
@@ -3187,3 +3201,14 @@ See [stackoverflow](https://stackoverflow.com/questions/8777845/overloading-memb
 ### STL Preview
 
 ![](imgs/STL_preview.png)
+
+
+
+### Q72
+### C/C++ 函数压栈原理
+
+流程：main() --调用--> fa() --调用--> fb()
+
+压出来的栈：
+
+(栈底) 操作系统运行状态，main函数返回地址，main函数参数，main函数运行状态，fa函数返回地址，fa函数参数，fa中定义的变量...，fa函数运行状态，fb函数返回地址，fb函数参数，fb中定义的变量
