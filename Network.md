@@ -30,7 +30,18 @@
 
 （1）MTU：Maximum Transmission Unit
 
-一种通信协议的某一层上面能通过的最大数据包大小，以太网为 1500。数据包一旦超过此大小，就会进行分包，这也就有了 IP 分片的过程。
+详解（参考 TCP/IP 卷一）
+
+MTU 是 IP 层向链路层查询的结果，其值包含了 IP 首部的大小。如果一个 IP 数据报的大小超过了 MTU，那么 IP 层会进行分片（fragmentation)。
+
+常见的 MTU：
+
+![](imgs/MTU.png)
+
+**Plus:** 点对点的链路层 MTU 并非反应了其物理特性，而是逻辑限制。296 = 40（TCP+IP首部）+ 256（数据部分）
+
+**Plus2:** 查看 MTU 的命令：netstat -i
+
 
 （2）MSS：Maximum Segment Size
 
@@ -51,6 +62,36 @@ TCP 通过 MSS 提前进行分段，从而保证数据不会超过 MTU，来保�
 （8）SRTT：Smooth Round Trip Time
 
 （9）MSL：Maximum Segment Life，报文段最大生存时间
+
+## Q：本地环回 lo 的 MTU
+
+参考1：https://stackoverflow.com/questions/27431984/significance-of-mtu-for-loopback-interface
+
+loopback current mtu of 16436 bytes allows no more than 3 MSS TCP segments per frame, or 48 Kbytes. Changing mtu to 64K allows TCP stack to build large frames and significantly reduces stack overhead.
+
+Performance boost on bulk TCP transferts can be up to 30 %, partly because we now have one ACK message for two 64KB segments, and a lower probability of hitting /proc/sys/net/ipv4/tcp_reordering default limit.
+
+- 设置 loopback MTU 的内核文件：/usr/src/linux-source-4.15.0/linux-source-4.15.0/drivers/net/loopback.c
+
+- 目前我的机子上 lo MTU = 65536B = 64KB
+
+
+## Q：TCP/IP 这种数据报协议族的优点
+
+参考1:1998 Clark
+
+First, they eliminate the need for connection state within the intermediate switching nodes, which means that the Internet can be reconstituted after a failure without concern about state.
+
+首先，它不需要维护网络链路中的中间交换节点的状态，这意味着网络可以在不考虑中间故障状态的情况下直接重组。
+
+Secondly, the datagram provides a basic building block out of which a variety of types of service can be implemented. In contrast to the virtual circuit, which usually implies a fixed type of service, the datagram provides a more elemental service which the endpoints can combine as appropriate to build the type of service needed.
+
+第二，数据报作为一个基础组件和基础服务，使得许多其他服务可以利用其建立起来。如 TCP， UDP。但面向连接的虚拟电路就不行。
+
+Third, the datagram represents the minimum network service assumption, which has permitted a wide variety of networks to be incorporated into various Internet realizations. The decision to use the datagram was an extremely successful one, which allowed the Internet to meet its most important goals very successfully.
+
+第三，数据报代表了最基础和底层的网络服务，保证了一系列网络可以联通在一起组成更大的网络结构。数据报的使用是十分成功的案例。
+
 
 ## Q：TCP 如何保证可靠性
 
@@ -718,6 +759,31 @@ RPC（Remote Procedure Call），即：远程过程调用，
 
 详见 Pink_server/knowledge/basic.md
 
+## Q：IP 数据报中的 TOS (type of service)
+
+IP 数据报的 8-15 位是占 8 位的服务类型（TOS），该字段包含 3 位的优先权子字段（现已被忽略），4 位的 TOS 字段和 1 位的未用位（必须置 0）。
+
+4 位 TOS 分别代表：最小时延，最大吞吐量，最高可靠性，最小费用。（其中只有 1 位能置 1，4 位均为 0 代表一般服务）
+
+典型的例子：（1）Telnet 开启最小时延 （2）FTP 控制开启最小时延 （3）FTP 数据开启最大吞吐量 （4）DNS UDP查询 开启最小时延 （5）ICMP 差错和查询 是一般服务。
+
+
+## Q：IP 数据报中的首部校验和
+
+首部校验和仅对首部计算。
+
+发送时，将首部划分为以 16 位为单位的段，并对他们进行二进制反码求和，得到 sum 放入首部校验和字段中。
+
+接收时，同样对 16 位的段进行二进制反码求和，此时答案应该是全 1。（因为结果 = sum + sum 的反码）
+
+差错处理：结果不全为 1，IP 层直接丢弃数据报，不生成差错报文。（由上层去发现丢失的数据报，并重传）
+
+**Plus：** ICMP，IGMP，UDP，TCP 在它们各自的首部中含有同时覆盖首部和数据部分的校验和。
+
+**Plus:** 由于 TTL 的存在，每经过一个路由器，TTL 减一，因此可以对首部校验和加一。（RFC 1141标准，标准BSD并不是采用递增的方法）
+
+
+
 ## Q：IP 地址种类
 
 参考1：https://www.cnblogs.com/tunian/p/9632893.html
@@ -744,7 +810,7 @@ E类：(240.0.0.0-247.255.255.255)是保留地址。该类IP地址的最前面�
 
 **Plus**
 
-1. 127.0.0.0 为本机地址，等于 localhost
+1. 127.0.0.1 为本机地址，等于 localhost
 
 ## Q：有哪些私有（保留）的地址
 
@@ -760,7 +826,7 @@ C级：192.168.0.0 - 192.168.255.255
 
 - 保留地址（特殊用途的）
 
-A类：127.X.X.X（用做循环测试）
+A类：127.X.X.X（用做环回测试）
 
 B类：169.254.X.X（如果你的IP地址是自动获取IP地址，而你在网络上又没有找到可用的DHCP服务器。就会得到其中一个IP)
 
@@ -787,6 +853,7 @@ B类：169.254.X.X（如果你的IP地址是自动获取IP地址，而你在网�
 1433/tcp 1433/udp：MS SQL*SERVER数据库server，默认的端口号为
 
 1434/tcp 1434/udp：MS SQL*SERVER数据库monitor，默认的端口号为
+
 
 ## Q：基于 TCP 和 UDP 的应用层协议
 
