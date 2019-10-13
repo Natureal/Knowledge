@@ -1,7 +1,9 @@
 # Database Questions
+
 > 数据库面试题总结
 
 ---
+
 ## Q：MySQL ACID
 
 - Atomicity（原子性）
@@ -56,10 +58,9 @@ select * from table for update 会加读锁。
 
 select * fron table 则是快照读（Snapshot Read），不会加锁。
 
-
 **按照数据粒度分：**
 
--  行锁（记录锁）
+- 行锁（记录锁）
 
 开销大，加锁慢，会出现死锁，粒度最小，锁冲突概率低，并发度最高。
 
@@ -94,11 +95,9 @@ Notice: 隔离级别越高，越能保证完整性和一致性，但并发性能
 首先，大部分数据库以及文件系统都采用B/B+树来实现索引。
 
 - **B Tree**
-
 1. 每个非叶子节点最多由m-1个key和m个指针组成。（key升序排序）。
 
 2. 所有叶子节点都在同一层。
-
 - **B+ Tree （MySQL普遍使用）**
 
 与B Tree的区别：
@@ -157,6 +156,7 @@ Notice: 隔离级别越高，越能保证完整性和一致性，但并发性能
 
 （3）银行家算法
 南方
+
 ## Q：MySQL 端口号，如何修改
 
 1. 查看：show global variables like 'port';（MySQL默认3306，SQLServer默认1433，Oracle默认1521，DB2默认5000）
@@ -263,7 +263,6 @@ AVL 对平衡性的要求更高，插入、删除所需要的旋转更多。适�
 
 （6）Java 中 TreeMap 底层实现为红黑树。
 
-
 ## Q：SQL 常见考题
 
 给出一个表 student，三列：name, course, score。
@@ -286,7 +285,6 @@ WHERE name NOT IN
   (SELECT DISTINCT name
    FROM student
    WHERE socre <= 80);
-
 ```
 
 2. 查询每门课都大于 80 分，且至少选修 3 门课的学生姓名
@@ -311,7 +309,6 @@ WHERE name in
    WHERE name like '张%'
    GROUP BY name
    HAVING avg(score) > 75);
-
 ```
 
 方法2：用 REGEXP 正则匹配

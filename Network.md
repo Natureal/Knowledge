@@ -42,7 +42,6 @@ MTU 是 IP 层向链路层查询的结果，其值包含了 IP 首部的大小�
 
 **Plus2:** 查看 MTU 的命令：netstat -i
 
-
 （2）MSS：Maximum Segment Size
 
 传输控制协议的一个参数，以字节数定义一个计算机或通信设备所能接受的分段的最大数据量。注意这是不包含 IP 头及 TCP 或 UDP 头的，例如，对于
@@ -89,7 +88,6 @@ Performance boost on bulk TCP transferts can be up to 30 %, partly because we no
 
 SLIP 的一些缺陷：（1）每一端必须知道对方的 IP 地址。没办法把本端的 IP 地址通知给另一端。（2）数据帧中没有类型字段。如果一条串行线路用于 SLIP，那么它不能同时使用其他协议。（3）数据帧中没有检验和，所以传输错误只能由上层协议来发现。
 
-
 ## Q：TCP/IP 这种数据报协议族的优点
 
 参考1:1998 Clark
@@ -105,7 +103,6 @@ Secondly, the datagram provides a basic building block out of which a variety of
 Third, the datagram represents the minimum network service assumption, which has permitted a wide variety of networks to be incorporated into various Internet realizations. The decision to use the datagram was an extremely successful one, which allowed the Internet to meet its most important goals very successfully.
 
 第三，数据报代表了最基础和底层的网络服务，保证了一系列网络可以联通在一起组成更大的网络结构。数据报的使用是十分成功的案例。
-
 
 ## Q：TCP 如何保证可靠性
 
@@ -126,7 +123,6 @@ Third, the datagram represents the minimum network service assumption, which has
 （4）超时重传：先将阈值设置为当前 CWND 的一半，再将 CWND 设置为 1，重新慢启动。
 
 （5）快速回复 + 快速重传算法：收到3次重复的确认报文，则立即进行重传。先将阈值设置为 CWND 的一半，然后将 CWND 设置为阈值 + 3（重新进入拥塞避免阶段）。
-
 
 ## Q：TCP TIME_WAIT 的概念和意义
 
@@ -199,7 +195,6 @@ Connection to 220.181.38.148 123 port [udp/ntp] succeeded!
 （3）UDP 首部 8 字节，TCP 首部 20 字节。
 
 （4）UDP 协议在视频传输、实时通信、游戏（比如网易游戏使用改进版的 UDP 协议）方面有应用。
-
 
 ## Q：TCP 握手和挥手 双方经历的状态
 
@@ -320,7 +315,6 @@ HTTP 请求和响应数据在发送到网络之前都要进行加密。从 HTTP 
 
 讲的不错的博文：https://blog.51cto.com/11883699/2160032
 
-
 ## Q：HTTP 请求报文
 
 参考1：https://blog.csdn.net/a_fool_program_ape/article/details/81748544
@@ -382,7 +376,6 @@ Referer：表示该次请求的来源，一般用于做防盗链
 **1. 概念**
 
 定义：是指一次和多次请求某一个资源有相同的副作用。幂等性对于分布式系统设计十分重要。
-
 
 ## Q：HTTP响应报文
 
@@ -489,7 +482,6 @@ Connection: Keep-Alive
 username=zhangsan&password=123
 ```
 
-
 （2）HTTP响应报文例子
 
 ```html
@@ -506,7 +498,6 @@ Content-Length: 122
 <!-- body goes here -->
 </body>
 </html>
-
 ```
 
 ## Q：HTTP 常见问题
@@ -558,7 +549,6 @@ GET 参数追加在 URL 后，长度受限制，不安全。
 
 POST 参数在请求报文的请求数据部分，长度比GET的限制长（在HTTP/1.1中无限制，但在服务器会限制），安全。
 
-
 ## Q：socket 是什么
 
 参考1：https://www.jianshu.com/p/b68d2b26f5f4
@@ -576,6 +566,7 @@ Socket是应用层与TCP/IP协议族通信的中间软件抽象层，它是一�
 **通用的 fd 读写函数。**
 
 返回 > 0 是读入、写出的大小，小于 0 是错误。
+
 ```cpp
 ssize_t read(int fd,void *buf,size_t nbyte);
 ssize_t write(int fd, const void*buf,size_t nbytes);
@@ -616,7 +607,6 @@ ssize_t sendto(int sockfd, const void* buf, size_t len, int flags,
 因为 UDP 没有连接的概念，每次读写都需要指定地址。
 
 Notice！！！ recvfrom 和 sendto 也可以用于 STREAM 连接，后两个参数设置为 NULL。
-
 
 **2. 网络相关**
 
@@ -687,13 +677,9 @@ howto：SHUT_RD（关闭读），SHUT_WR（关闭写），SHUT_RDWR（关闭读�
 
 强制关闭直接无视引用计数！
 
-
-
 ## Q：UDP 网络编程
 
 ![](imgs/udp_web_programming.png)
-
-
 
 ## Q：MIME
 
@@ -781,7 +767,6 @@ IP 数据报的 8-15 位是占 8 位的服务类型（TOS），该字段包含 3
 
 典型的例子：（1）Telnet 开启最小时延 （2）FTP 控制开启最小时延 （3）FTP 数据开启最大吞吐量 （4）DNS UDP查询 开启最小时延 （5）ICMP 差错和查询 是一般服务。
 
-
 ## Q：IP 数据报中的首部校验和
 
 首部校验和仅对首部计算。
@@ -796,8 +781,6 @@ IP 数据报的 8-15 位是占 8 位的服务类型（TOS），该字段包含 3
 
 **Plus:** 由于 TTL 的存在，每经过一个路由器，TTL 减一，因此可以对首部校验和加一。（RFC 1141标准，标准BSD并不是采用递增的方法）
 
-
-
 ## Q：IP 地址种类
 
 参考1：https://www.cnblogs.com/tunian/p/9632893.html
@@ -810,7 +793,6 @@ IP地址由两部分组成，即网络地址和主机地址。网络地址表示
 IP地址的四大类型标识的是网络中的某台主机。IPv4的地址长度为32位，共4个字节，但实际中我们用点分十进制记法。
 
 ![](imgs/IP_class.png)
-
 
 A类：(0.0.0.0-127.255.255.255)（默认子网掩码：255.0.0.0或 0xFF000000）第一个字节为网络号，后三个字节为主机号。该类IP地址的最前面为“0”，所以地址的网络号取值于1~126之间。一般用于大型网络。
 
@@ -868,7 +850,6 @@ B类：169.254.X.X（如果你的IP地址是自动获取IP地址，而你在网�
 
 1434/tcp 1434/udp：MS SQL*SERVER数据库monitor，默认的端口号为
 
-
 ## Q：基于 TCP 和 UDP 的应用层协议
 
 基于TCP的应用层协议有：SMTP、TELNET、HTTP、FTP
@@ -910,7 +891,6 @@ CDN 的全称是 Content Delivery Network，即内容分发网络。
 缺点：（1）安全问题，Proxy ARP 本身就是用 ARP 欺骗，所以自己也容易被 ARP 欺骗。（2）整个网络看起来是透明的，不利于概括和推广网络拓扑。（3）待思考...
 
 应用场景：其实际应用的场景很少。使用在主机没有配置默认网关，或者没有任何路由策略的网络上。（因为默认网关完全可以解决跨局域网的地址查询（通过网关进行转发））。
-
 
 ## Q：RARP 逆地址解析协议
 
@@ -983,3 +963,27 @@ CDN 的全称是 Content Delivery Network，即内容分发网络。
 **4.4 BSD 系统对 ICMP 报文的处理**
 
 ![](imgs/ICMP_handle.png)
+
+## Q：traceroute 基本原理
+
+traceroute程序使用ICMP报文和IP首部中的TTL字段（生存周期）来实现路径记录的功能。
+
+traceroute通过先发送TTL=1的UDP数据报给目的主机，在第一个路由器接收到报文并将TTL字段减1后，发现其值为0则丢弃数据报，并发回一份超时ICMP报文。这样就得到了路径上的第一个路由器的地址。以此类推，发送TTL=2，TTL=3的UDP数据报，以获得路径上的其他路由器地址。
+
+但是目的主机接收到TTL=1为1的UDP数据报也不会丢弃并回送超时ICMP报文。所以traceroute通过将UDP数据报发到一个不可能的端口号上，让目的主机回送“端口不可达”的ICMP报文，从而判断已经到达目的主机。
+
+**Notice**
+
+不能保证前后两份数据报经过同一路径，也不能保证ICMP和UDP数据报经过同一路径。
+
+ Q：IP的RR选项 和 traceroute 输出的异同
+
+（1）IP的RR选项记录的是IP数据报被**发出**的接口地址。
+
+（2）traceroute输出的是ICMP超时/端口不可达报文中的信源IP地址，即其是UDP数据报**到达**的接口地址序列。
+
+**Tips**
+
+通过将目的主机设置为宽松路由需要经过的路由器，并将自己的主机设置为traceroute的目标地址。从而实现查询自己主机到目的主机的路由**环路**。
+
+

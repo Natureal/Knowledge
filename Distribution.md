@@ -1,8 +1,8 @@
 # Distribution Questions
+
 > 分布式相关面试题（Docker，Hadoop，Spark，Kubernetes，Kafka，etc）
 
 ---
-
 
 ## Q: Docker 的本质
 
@@ -13,7 +13,6 @@ Docker 为我们准备 rootfs 地址，image 里的文件，基于 Namespace 的
 （而内核本身也支持这些隔离，因此 Docker 本质就是个 Daemon 进程，内核的搬运工。）
 
 容器启动速度快，容器本身和进程差别并不非常大。
-
 
 ## Q: Docker 与 虚拟机
 
@@ -31,13 +30,11 @@ Docker守护进程可以直接与主操作系统进行通信，为各个Docker�
 
 - 从操作系统(Guest Operating System)。假设你需要运行3个相互隔离的应用，则需要使用Hypervisor启动3个从操作系统，也就是3个虚拟机。这些虚拟机都非常大，也许有700MB，这就意味着它们将占用2.1GB的磁盘空间。更糟糕的是，它们还会消耗很多CPU和内存。
 
-
 #### Docker结构
 
 ![](imgs/20190616-150640.png)
 
 - Docker守护进程(Docker Daemon)。Docker守护进程取代了Hypervisor，它是运行在操作系统之上的后台进程，负责管理Docker容器。
-
 
 ## Q: Docker底层实现隔离的机制
 
@@ -63,8 +60,6 @@ Docker守护进程可以直接与主操作系统进行通信，为各个Docker�
 
 - **隔离性Summary**
 
-
-
 通过Namespace来进行隔离，Cgroups进行资源限制，Capability进行权限限制
 
 ### 1. Namespace隔离
@@ -84,7 +79,6 @@ Docker守护进程可以直接与主操作系统进行通信，为各个Docker�
 （3）**进程间通信隔离：IPC Namespaces**
 
 负责信号量，消息队列和共享内存等的隔离。对IPC的全局ID进行隔离，使得其不会被其他Namespace内的进程看到。
-
 
 （4) **进程树隔离：PID Namespaces**
 

@@ -7,6 +7,7 @@
 待参考：《Effective C++》
 
 ---
+
 [Q1.面向对象的特征](#Q1)
 
 [Q2.C/C++内存区](#Q2)
@@ -168,9 +169,10 @@
 - 执行速度慢，效率低，依靠解释器，跨平台性能好。
 
 ### Q1
+
 ### 面向对象的特征
 
--  抽象
+- 抽象
 
 （1）数据抽象（类的属性）
 
@@ -200,8 +202,8 @@
 
 （4）方法的重写
 
-
 ### Q2
+
 ### C/C++ 内存区
 
 参考1：https://blog.csdn.net/qq_22238021/article/details/79533711
@@ -245,6 +247,7 @@ Notice：静态存储区：在内存空间中
 （2）在C++中：常量存储区
 
 ### Q3
+
 ### 智能指针（C++11）
 
 - **shared_ptr**
@@ -269,8 +272,8 @@ shared_ptr 的析构函数会递减它所指向的对象的引用计数。如果
 
 当 return 一个 shared_ptr 时，函数会向调用者返回一个 shared_ptr 的拷贝，会增加所管理对象的引用计数值。
 
-
 接下来是一些定义和改变 shared_ptr 的方法
+
 ```cpp
 shared_ptr<T> p(q); // p 管理内置指针 q 所指向的对象，q 必须由 new 分配内存，且能转换为 T* 类型
 shared_ptr<T> p(u); // p 管理 unique_ptr u 所管理的类型，将 u 置空
@@ -333,6 +336,7 @@ for(size_t i = 0; i != 10; ++i){
   up[i] = i; // 允许使用下标访问
 }
 ```
+
 如果要用 shared_ptr 来管理动态数组，必须提供自己定义的删除器
 
 ```cpp
@@ -344,7 +348,6 @@ for(size_t i = 0; i != 10; ++i){
   *(sp.get() + i) = i; // 使用 get 来获取内置指针
 }
 ```
-
 
 - **weak_ptr**
 
@@ -384,6 +387,7 @@ Summary：weak_ptr 不会影响一个给定的对象的生存期，但是可以�
 - **动态内存**
 
 new 和 delete
+
 ```cpp
 auto p1 = new auto(obj); // 使用 auto 自动推断
 // 动态分配的 const 对象
@@ -435,11 +439,9 @@ void f3(destination &d /* 其他参数 */){
   unique_ptr<connection, decltype(end_connection)*>
               p(&c, end_connection);
 }
-
 ```
 
 - **使用智能指针的规范**
-
 1. 不使用相同的内置指针初始化（或 reset）多个智能指针。
 
 2. 不 delete get() 返回的指针。
@@ -453,6 +455,7 @@ void f3(destination &d /* 其他参数 */){
 <font color=red>但是在使用内置指针时，如果在 new 之后，delete 之前发生了异常，内存不会被释放。</font>
 
 ### Q4
+
 ### shared_ptr 实现
 
 参考1： https://blog.csdn.net/u013611405/article/details/88047741
@@ -515,6 +518,7 @@ private:
 ```
 
 ### Q5
+
 ### C++ 3/5法则
 
 如果一个类需要自定义析构函数，几乎可以肯定它也需要自定义拷贝构造函数和拷贝赋值运算符（考虑动态空间）。
@@ -527,9 +531,11 @@ private:
 所有5个拷贝控制应该被看作一个整体，定义了任何一个就应该定义全部5个操作。
 
 ### Q6
+
 ### 拷贝并交换（copy and swap）
 
 这种写法是自赋值安全且异常安全的！
+
 ```cpp
 HasPtr& HasPtr::operator = (HasPtr copy){
   swap(*this, copy); // copy 现在指向本对象曾经使用的内存
@@ -537,8 +543,8 @@ HasPtr& HasPtr::operator = (HasPtr copy){
 }
 ```
 
-
 ### Q7
+
 ### allocator 类
 
 它帮助我们将内存分配和对象构造分离开来，它分配的内存是原始的，未构造的。头文件：memory
@@ -555,7 +561,6 @@ a.destroy(p); // 对 p 所指向的对象执行析构函数
 auto q = p;
 alloc.construct(q++);
 alloc.construct(q++, "hi");
-
 ```
 
 使用未构造的内存，其行为是未定义的。
@@ -574,10 +579,10 @@ allocator<int> alloc;
 auto p = alloc.allocate(vi.size() * 2);
 auto q = uninitialized_copy(vi.begin(), vi.end(), p); // 通过拷贝来构造，返回最后一个元素之后的位置
 uninitialized_fill_n(q, vi.size(), 42); // 将剩余的元素初始化为42
-
 ```
 
 ### Q8
+
 ### vector 的实现
 
 ```cpp
@@ -758,10 +763,10 @@ Vec::push_back(T&& s){
   chk_n_alloc();
   alloc.construct(first_free++, std::move(s));
 }
-
 ```
 
 ### Q9
+
 ### 移动
 
 法则：在移动操作后，移后源对象必须保持有效的，可析构的状态，但是用户不能对其值进行任何假设。
@@ -806,6 +811,7 @@ Notice：返回右值的表达式：算术，关系，位，后置递增/递减�
 - **std::move 函数**
 
 对一个左值，像右值一样处理它，但是这就意味着，除了对 rr1 赋值或销毁之外，我们将不再使用它！
+
 ```cpp
 int rr1 = 42;
 int &&r3 = std::move(rr1);
@@ -825,20 +831,22 @@ typename remove_reference<T>::type&& move(T&& t){
 - **通常同时定义const 左值引用和右值引用函数**
 
 An example:
+
 ```cpp
 void push_back(const X&); // 拷贝
 void push_back(X&&); // 移动，绑定到可修改的右值
 ```
 
 ### Q10
-### 返回左值/右值的操作
 
+### 返回左值/右值的操作
 
 1. 返回左值的表达式：赋值，下标，<font color=red>解引用</font>，前置递增/递减运算符
 
 2. 返回右值的表达式：算术，关系，位，后置递增/递减运算符
 
 ### Q11
+
 ### C++ 数据类型转换
 
 static_cast, dynamic_cast, reinterpret_cast, const_cast
@@ -857,8 +865,8 @@ static_cast, dynamic_cast, reinterpret_cast, const_cast
 
 参考1：https://www.cnblogs.com/TenosDoIt/p/3175217.html
 
-
 ### Q12
+
 ### function
 
 头文件：functional
@@ -872,6 +880,7 @@ int z = f(x, y);
 ```
 
 ### Q13
+
 ### 使用 =delete 来阻止一些函数
 
 在函数的参数列表后面加上 =delete 来指出我们希望将他们定义为删除的，即：不希望定义这些东西：
@@ -887,8 +896,8 @@ struct NoCopy{
 }
 ```
 
-
 ### Q14
+
 ### const 详解
 
 - **默认状态下，const对象只在文件内有效**
@@ -997,7 +1006,6 @@ constexpr int sz = size(); // 当 size 为 constexpr 函constexpr数时，这行
 ```
 
 - **指针和constexpr**
-
 1. constexpr指针的初始值必须是nullptr，0或者某个存储于固定地址中的对象（一般是定义于函数体外的对象）。
 2. constexpr只对指针本身有效，与指针所指向的对象无关。
 
@@ -1006,7 +1014,6 @@ const int *p = nullptr; // p 是一个指向常数类型的指针。
 constexpr int *q = nullptr; // q 是一个指向整数的常量指针，constexpr把指针对象设置为顶层const。
 
 （类似 int *const q = nullptr）
-
 ```
 
 - **constexpr 函数**
@@ -1024,10 +1031,7 @@ int a1 = scale(i); // 返回值是一个非常量表达式（不确定该行是�
 int a2[scale(i)]; // 错误，无法用非常量表达式初始化一个数组
 ```
 
-
-
 - **类型别名与const**
-
 1. C++11中可以用 using 代替 typedef
 
 ```cpp
@@ -1037,7 +1041,6 @@ SI item;
 
 using int_array = int[4];
 typedef int int_array[4]; // 等价的 typedef
-
 ```
 
 2. typedef 与 *
@@ -1050,18 +1053,18 @@ char *const dstr = 0; // 该行与上行有一样的效果
 const char *estr = 0; // const char* 的指针，指向常量字符
 ```
 
-
-
 ### Q15
+
 ### auto 类型说明符（C++11）
 
 - **auto 类型在初始化时，会忽略掉顶层const**
-```cpp
-const int ci = 0;
-auto b = ci; // b 为 int 类型（省略了顶层const）
-const auto cb = ci; // cb 为 const int 类型
-auto c = &ci; // c 为指向整形常量的指针（保留了底层const）
-```
+  
+  ```cpp
+  const int ci = 0;
+  auto b = ci; // b 为 int 类型（省略了顶层const）
+  const auto cb = ci; // cb 为 const int 类型
+  auto c = &ci; // c 为指向整形常量的指针（保留了底层const）
+  ```
 
 但是！auto在碰到引用时，初始值中的顶层const属性仍然保留。
 
@@ -1101,6 +1104,7 @@ for(auto beg = v.begin(), end = v.end(); beg != end; ++beg){
 ```
 
 ### Q16
+
 ### 函数的引用限定符，返回左值/右值的函数
 
 ```cpp
@@ -1133,11 +1137,10 @@ Foo Foo::sorted() &&{
   sort(data.begin(), data.end());
   return *this;
 }
-
 ```
 
-
 ### Q17
+
 ### 左值与右值
 
 左值：指那些求值结果作为对象或函数的表达式。
@@ -1154,8 +1157,8 @@ summary：当一个对象被用作右值的时候，用的是对象的值（内�
 
 4. 对于 decltype，如果表达式的结果是左值，decltype得到一个引用类型。
 
-
 ### Q18
+
 ### decltype（C++11）
 
 从表达式推断出要定义的变量的类型，但不想用该表达式的值。
@@ -1182,6 +1185,7 @@ decltype(r) f = i; // 正确，f 为 int& 类型，只有在 decltype 中，引�
 ```
 
 ### Q19
+
 ### 无符号，有符号数混合运算
 
 有符号数会先转换为无符号数，再进行相应的算术运算。
@@ -1190,8 +1194,8 @@ string::size_type 为无符号数，因此如果在一条表达式中已经有�
 
 s.size() < n // n 为负值 int，比如 -1，在表达式中 n 会被自动转换为一个巨大的无符号整数。
 
-
 ### Q20
+
 ### 函数返回值
 
 - **main 函数返回值**
@@ -1214,6 +1218,7 @@ int main(){
 - **返回指针的函数**
 
 普通方式：
+
 ```cpp
 // type (*function(parameter_list))[dimension]
 int (*func(int i))[10]; // func 外面的括号必须有，否则将返回指针的数组
@@ -1225,6 +1230,7 @@ int (*func(int i))[10]; // func 外面的括号必须有，否则将返回指针
 ```
 
 别名方式：
+
 ```cpp
 typedef int arrT[10]; // 声明 arrT 是一个含有 10 个整数的数组
 using arrT = int[10]; // 与上行等价，C++11
@@ -1233,12 +1239,14 @@ arrT *func(int i); // func 返回一个指向 10 个整数的数组的指针
 ```
 
 More advanced 方式：（骚气地运用 auto）
+
 ```cpp
 // 尾置返回类型(trailing return type)，对于复杂函数很有用!
 auto func(int i) -> int (*)[10];
 ```
 
 奇怪的方式：（运用 decltype）
+
 ```cpp
 int odd[] = {1,2,3,4};
 decltype(odd) *arrPtr(int i){
@@ -1246,8 +1254,8 @@ decltype(odd) *arrPtr(int i){
 }
 ```
 
-
 ### Q21
+
 ### 列表初始化 (C++11)
 
 ```cpp
@@ -1290,7 +1298,6 @@ list<string> authors = {"Milton", "Shakespeare", "Austen"};
 vector<const char*> articles = {"a", "an", "the"};
 // 还能用迭代器进行初始化
 forward_list<string> words(articles.begin(), articles.end());
-
 ```
 
 - **列表初始化 pair**
@@ -1299,8 +1306,8 @@ forward_list<string> words(articles.begin(), articles.end());
 pair<string, string> author{"James", "Joyce"};
 ```
 
-
 ### Q22
+
 ### 迭代器
 
 - **种类**
@@ -1362,7 +1369,6 @@ auto rit2 = v.crend();
 
 Notice：任何一种可能改变 vector 对象容器的操作，比如添加元素 push_back，都会使该 vector 对象的迭代器失效。不仅仅是 vector，这条规则对任何容器都适用。
 
-
 - **istream 迭代器**
 
 ```cpp
@@ -1380,7 +1386,6 @@ while(int_it != int_eof){
 // 更骚气的操作：从 cin 中读取数据，直到遇到文件尾或者遇到一个不是 int 的数据为止
 istream_iterator<int> int_it(cin), eof;
 vector<int> vec(int_it, eof);
-
 ```
 
 - **ostream 迭代器**
@@ -1405,6 +1410,7 @@ cout << endl;
 ```
 
 ### Q23
+
 ### 泛型算法结构
 
 ```cpp
@@ -1427,6 +1433,7 @@ remove_copy_if(v1.begin(), v1.end(), back_inserter(v2),
 ```
 
 ### Q24
+
 ### 关联容器
 
 关联容器中的元素是按照关键字在保存和访问的，而不是顺序。
@@ -1465,10 +1472,8 @@ c.rehash(n); // 重组存储，使得 bucket_count >= n，bucket_count > size/ma
 c.reverse(n); // 重组存储，使其能保存 n 个元素且不必 rehash
 ```
 
-
-
-
 ### Q25
+
 ### begin 和 end 函数（C++11引入的标准库函数）
 
 ```cpp
@@ -1478,6 +1483,7 @@ int *last = end(ia); // 指向尾元素的下一位置的指针，但该指针�
 ```
 
 ### Q26
+
 ### C++11 遍历数组方式
 
 ```cpp
@@ -1490,10 +1496,10 @@ for(auto p = ia; p != ia + 3; ++p){
   }
   cout << endl;
 }
-
 ```
 
 ### Q27
+
 ### initializer_list 形参（C++11）
 
 如果函数的实参数量未知，但是全部实参的类型都相同，可以用 initializer_list。
@@ -1521,6 +1527,7 @@ void foo(...);
 ```
 
 ### Q28
+
 ### C++11 运算符
 
 1. 取余
@@ -1571,8 +1578,8 @@ int arr2[sz];
 
 4. 对 string/vector 对象执行 sizeof，只会返回该类型固定部分的大小，不会计算对象中的元素占用了多少空间。
 
-
 ### Q29
+
 ### 内联函数
 
 将函数指定为内联函数（inline），即在函数前面加上 inline 修饰符，通常就是将它在每个调用点上“内联地”展开，即把函数内容替换到调用处，消除了调用开销。
@@ -1584,6 +1591,7 @@ int arr2[sz];
 PS：很多编译器都不支持内联递归函数！
 
 ### Q30
+
 ### =default（C++11）
 
 对于类的构造函数，我们可以用如下的方式将其定义为默认构造函数：
@@ -1599,6 +1607,7 @@ struct Sales_data{
 ```
 
 ### Q31
+
 ### class 和 struct 的区别
 
 使用class和struct定义类的唯一区别就是默认的访问权限。
@@ -1609,6 +1618,7 @@ struct Sales_data{
 因此，当希望定义的类的所有成员都是 public 时，可以用 struct。
 
 ### Q32
+
 ### 友元函数
 
 使得类可以允许其他类或者函数访问它的非共有（private）成员。
@@ -1630,11 +1640,13 @@ std::ostream &print(std::ostream&, const Sales_data&);
 ```
 
 ### Q33
+
 ### 构造函数深入讨论
 
 - **学会用构造函数初始值列表：一种更高效的初始化方式**
 
 下面是一种构造函数的写法，但是效率并不是最好。因为如果没有在构造函数初始值列表中显式地初始化成员，则该成员将在构造函数之前执行默认初始化，然后才会在函数内被赋值。
+
 ```cpp
 Sales_data::Sales_data(const string &s, unsigned cnt, double price){
   bookNo = s;
@@ -1644,6 +1656,7 @@ Sales_data::Sales_data(const string &s, unsigned cnt, double price){
 ```
 
 因此，有的时候我们必须用构造函数初始值列表来初始化成员。比如：成员是 const 或者引用的时候，只有一次机会进行初始化，还有类似的，如果成员的是类，且该类类型没有定义默认构造函数时。
+
 ```cpp
 class ConstRef{
 public:
@@ -1660,7 +1673,6 @@ ConstRef::ConstRef(int ii): i(ii), ci(ii), ri(i) {}
 Notice：构造函数初始值列表中的初始值的前后顺序不会影响实际的初始化顺序。实际顺序是它们在类定义中的顺序。
 
 Notice：如果一个构造函数的所有参数都提供了默认实参，则它实际上也定义了默认构造函数。
-
 
 - **委托构造函数**
 
@@ -1687,11 +1699,12 @@ item.combine(null_book); // 用一个string实参自动创建了一个Sales_data
 Sales_data item2 = null_book; // 拷贝初始化时也可以隐式转换
 ```
 
-
 Notice：可以抑制隐式转换，在构造函数前声明为 explicit，只对一个实参的构造函数有效，而且只能在类内中用。需要多个实参的构造函数默认不能用于执行隐式转换。
+
 ```cpp
 explicit Sales_data(std::istream&); // 显式构造函数
 ```
+
 且，explicit构造函数只能用于直接初始化，不能拷贝初始化。
 
 - **constexpr 构造函数**
@@ -1709,6 +1722,7 @@ explicit Sales_data(std::istream&); // 显式构造函数
 4. 类内初始值是常量表达式
 
 ### Q34
+
 ### 文件流 fstream
 
 ```cpp
@@ -1723,8 +1737,8 @@ ofstream app2("file2", ofstream::out | ofstream::app);
 // 保留被 ofstream 打开的文件中已有的数据的唯一方法是显式指定 app 或 in 模式
 ```
 
-
 ### Q35
+
 ### 静态成员的类内初始化
 
 ```cpp
@@ -1739,6 +1753,7 @@ private:
 ```
 
 ### Q36
+
 ### 顺序容器
 
 1. string 和 vector 将元素保存在连续的内存空间中，所以访问很快，在中间位置插入/删除很慢。
@@ -1794,6 +1809,7 @@ c.push_back(Sales_data("978-0590353402", 25， 15.99));
 - **访问容器元素**
 
 访问成员函数返回的是引用（包括 front, back, [], at）。
+
 ```cpp
 c.front();
 c.back();
@@ -1849,6 +1865,7 @@ s.replace(11, 3, "5th"); // 从下标 11 开始，删除 3 个元素，并插入
 ```
 
 string 的搜索函数
+
 ```cpp
 string name("AnnaBelle");
 // find 函数是最简单的搜索，找到第一个匹配位置的下标
@@ -1868,8 +1885,8 @@ s.rfind(); // 逆向搜索
 // args 可以指定开始位置
 s.find(s, pos); // 从 pos 开始找
 s.find(s, pos, n); // 从 pos 开始找前 n 个字符
-
 ```
+
 string 的 compare 函数
 
 ```cpp
@@ -1878,6 +1895,7 @@ s.compare(pos1, n1, s2, pos2, n2);
 ```
 
 ### Q37
+
 ### Lambda 表达式
 
 表示一个可调用的代码单元，可以看成一个未命名的内联函数。
@@ -1925,11 +1943,12 @@ auto wc = find_if(words.begin(), words.end(),
 Notice：当以引用方式捕获一个变量时，必须保证在 lambda 执行时变量是存在的。
 
 - 隐式捕获（C++是全世界最棒的语言！！），不能同时使用隐式值捕获和隐式引用捕获
-```cpp
-// os 显式引用捕获，c 隐式值捕获
-for_each(words.begin(), words.end(),
+  
+  ```cpp
+  // os 显式引用捕获，c 隐式值捕获
+  for_each(words.begin(), words.end(),
         [=, &os](const string &s) { os << s << c; });
-```
+  ```
 
 - 可变 Lambda
 
@@ -1945,8 +1964,8 @@ auto f = [&v1] { return ++v1; } // 用引用也可以改变
 auto f = [](int i) -> int {if(i < 0) return -i; else return i; };
 ```
 
-
 ### Q38
+
 ### bind 函数（C++11）
 
 可以绑定函数，实现嵌套
@@ -1965,25 +1984,27 @@ f(a, b, y, c, x);
 bind 使用引用，必须使用标准库 ref 函数来返回一个对象，包含给定的引用，类似的还有 cref（针对 const）
 
 ref 定义在头文件 functional 中
+
 ```cpp
 using namespace std::placeholders;
 for_each(words.begin(), words.end(),
           bind(print, ref(os), _1, ' '));
 ```
 
-
 ### Q39
+
 ### 新标准库的性能
 
 ### Q40
+
 ### free 底层实现
 
 参考1：https://www.cnblogs.com/vincently/p/4842221.html
 
 包含了缺页中断，malloc 与 free 底层实现
 
-
 ### Q41
+
 ### 容器与继承
 
 当派生类对象赋值给基类对象时，其中的派生类部分将被“切掉”，因此容器和存在继承关系的类型无法兼容。
@@ -1995,6 +2016,7 @@ vector<shared_ptr<Quote>> basket;
 ```
 
 ### Q42
+
 ### 继承的构造函数
 
 1. 派生类以非常规的方式重用直接基类的构造函数，但可姑且成为“继承”。
@@ -2010,15 +2032,16 @@ vector<shared_ptr<Quote>> basket;
 5. 如果一个类只含有继承的构造函数（不会被看成是用户定义的），编译器会合成一个默认的构造函数。
 
 ### Q43
+
 ### 构造函数/析构函数可以是虚函数吗
 
 - **构造函数不能是虚函数**
-
 1. 可行性上不行
 
 调用虚函数需要通过_vftabl指针访问虚函数表，但是对象还没有实例化，在内存空间中都不存在，如何访问虚函数表？
 
 ---
+
 作者：wykxwyc
 链接：https://www.nowcoder.com/discuss/211301?type=0&order=0&pos=30&page=1
 来源：牛客网
@@ -2046,14 +2069,11 @@ vector<shared_ptr<Quote>> basket;
 构造函数是在创建对象时自动调用的，而不可能通过指针或者引用去调用。并且在创建对象时我们需要明确对象的类型，所以在构造时不需要表现多态性。
 
 - **在构造函数中调用虚函数**
-
 1. 语法可行但没有意义
 
 调用基类（包括自己）的虚函数没有问题，但是如果调用派生类的虚函数是危险的，其可能操作未被初始化的派生类成员（因为派生类对象还没被构造），会产生灾难。
 
-
 - **虚析构函数可以是虚函数**
-
 1. 可行且需要
 
 比如 Base *p = new Derive; Derive 是 Base 的子类。如果 ～Base() 不是虚函数，那么在析构 p 所指向的对象时，只会调用 ～Base() 而不会调用 ~Derive()，因为非虚函数是静态绑定的。此时就无法释放被 Derive 子类 new 出来的空间。
@@ -2069,6 +2089,7 @@ vector<shared_ptr<Quote>> basket;
 ![](imgs/virtual_func.png)
 
 ### Q44
+
 ### 虚继承与虚函数
 
 - **定义**
@@ -2120,6 +2141,7 @@ class C : public virtual A { ... };
 2.当D中没有发生虚函数覆盖的时候,D中新定义的虚函数会放在第一个（共享的）虚函数表后面。
 
 ### Q45
+
 ### 模板函数允许尾置返回类型
 
 ```cpp
@@ -2128,10 +2150,10 @@ auto fcn(It beg, It end) -> decltype(*beg){
   // processing
   return *beg; // 返回序列中一个元素的引用，因为解引用范围一个左值
 }
-
 ```
 
 ### Q46
+
 ### 引用的底层实现
 
 参考1：https://blog.csdn.net/weixin_34376562/article/details/85879495
@@ -2139,6 +2161,7 @@ auto fcn(It beg, It end) -> decltype(*beg){
 在底层其实是由指针实现，但在语言级别上，引用只是变量的别名。
 
 ### Q47
+
 ### RTTI（Run Time Type Identification）
 
 运行时类型检查，实际上是 C/C++ 实现多态的基础。
@@ -2159,15 +2182,15 @@ if(typeid(*p) == typeid(Derived)){
 
 使用场景（不能转换掉 const、volatile 类型）：
 
-  - （i）进行上行转换（派生类指针/引用换成基类的），是安全的。
+- （i）进行上行转换（派生类指针/引用换成基类的），是安全的。
 
-  - （ii）进行下行转换（基类指针/引用换成派生类的），没有动态类型检查，是不安全的。（不应该使用）
+- （ii）进行下行转换（基类指针/引用换成派生类的），没有动态类型检查，是不安全的。（不应该使用）
 
-  - （iii）用于基本数据类型之间的转换，如 int -> char。
+- （iii）用于基本数据类型之间的转换，如 int -> char。
 
-  - （iv）空指针转换为目标类型的空指针。
+- （iv）空指针转换为目标类型的空指针。
 
-  - （v）任何类型转换为 void 类型。
+- （v）任何类型转换为 void 类型。
 
 （3）dynamic_cast，用于将基类的指针或引用安全地转换成派生类的指针或引用
 
@@ -2197,19 +2220,16 @@ try{
 }catch(std::bad_cast){
   // ...
 }
-
 ```
 
 使用场景：
 
-  - （i）进行上行转换，和 static_cast 效果一致。
+- （i）进行上行转换，和 static_cast 效果一致。
 
-  - （ii）进行下行转换时，具有类型检查的功能，更安全。（可能耗费重大运行成本，因此尽量少用）
-
-
-
+- （ii）进行下行转换时，具有类型检查的功能，更安全。（可能耗费重大运行成本，因此尽量少用）
 
 ### Q48
+
 ### extern "C"
 
 ```cpp
@@ -2217,6 +2237,7 @@ try{
 ```
 
 ### Q49
+
 ### 设计模式：单例模式，工厂模式
 
 - **单例模式**
@@ -2274,14 +2295,12 @@ int main(){
   Singleton::destroy_instance();
   return 0;
 }
-
 ```
-
 
 - **工厂模式**
 
-
 ### Q50
+
 ### 字节对齐原则
 
 参考1：https://blog.csdn.net/yhc166188/article/details/80679487
@@ -2299,12 +2318,11 @@ Q:字节对齐的原则
 如果加入pragma pack(n) ，取n和变量自身大小较小的一个。
 
 ### Q51
+
 ### C++ 锁
 
-
-
-
 ### Q52
+
 ### string 类自己实现
 
 参考1：https://blog.csdn.net/ly_6699/article/details/87900932
@@ -2467,10 +2485,10 @@ private:
     size_t _capacity;
     static size_t npos;
 }
-
 ```
 
 ### Q53
+
 ### sort 的实现机制
 
 参考1：STL源码剖析
@@ -2486,12 +2504,13 @@ Introspective Sort（内省排序）：
 3. 根据 __stl_threshold = 16 的阈值，对小于阈值的小区间采用插入排序
 
 ### Q54
+
 ### 空结构体 sizeof
 
 参考：https://blog.csdn.net/cbffyx/article/details/14167183
 
-
 空结构体的大小在不同编译器中，值是不同的。
+
 ```cpp
 GCC   sizeof()  return   0
 
@@ -2512,6 +2531,7 @@ G++ treats empty structures as if they had a single member of type char.
 ```
 
 ### Q55
+
 ### 静态连接与动态链接的区别
 
 参考1：https://blog.csdn.net/yhc166188/article/details/80679487
@@ -2525,9 +2545,11 @@ G++ treats empty structures as if they had a single member of type char.
 所谓动态链接就是在编译的时候不直接拷贝可执行代码，而是通过记录一系列符号和参数，在程序运行或加载时将这些信息传递给操作系统，操作系统负责将需要的动态库加载到内存中，然后程序在运行到指定的代码时，去共享执行内存中已经加载的动态库可执行代码，最终达到运行时连接的目的。优点是多个程序可以共享同一段代码，而不需要在磁盘上存储多个拷贝，缺点是由于是运行时加载，可能会影响程序的前期执行性能。
 
 ### Q56
+
 ### 引用折叠规则
 
 引用折叠只能应用于间接创建的引用的引用，如类型别名或模板参数
+
 ```cpp
 X& & -> X&
 X& && -> X&
@@ -2546,8 +2568,8 @@ template<typename T> void f(T&&); // 绑定非const右值
 template<typename T> void f(const T&); // 绑定左值和const右值
 ```
 
-
 ### Q57
+
 ### 指针和引用的区别
 
 参考：https://www.cnblogs.com/heyonggang/p/3250194.html
@@ -2559,6 +2581,7 @@ template<typename T> void f(const T&); // 绑定左值和const右值
 (3)引用初始化后不能被改变，指针可以改变所指的对象.
 
 ### Q58
+
 ### bitset
 
 ```cpp
@@ -2580,10 +2603,10 @@ b.to_ullong();
 b.to_string(zero, one);
 os << b;
 is >> b;
-
 ```
 
 ### Q59
+
 ### C++11 随机数引擎
 
 ```cpp
@@ -2603,6 +2626,7 @@ vector<unsigned> good_randVec(){
 ```
 
 ### Q60
+
 ### 深入理解数组名与数组指针
 
 数组名：
@@ -2613,8 +2637,8 @@ vector<unsigned> good_randVec(){
 
 因此 sizeof（数组名）将得到数组大小（字节数）。
 
-
 ### Q61
+
 ### 模板类的声明和定义建议都放在头文件中
 
 参考1：https://blog.csdn.net/qq1169091731/article/details/51197583
@@ -2625,6 +2649,7 @@ vector<unsigned> good_randVec(){
 因为在编译时模板并不能生成真正的二进制代码，而是在编译调用模板类或函数的CPP文件时才会去找对应的模板声明和实现，在这种情况下编译器是不知道实现模板类或函数的CPP文件的存在，所以它只能找到模板类或函数的声明而找不到实现，而只好创建一个符号寄希望于链接程序找地址。但模板类或函数的实现并不能被编译成二进制代码，结果链接程序找不到地址只好报错了。
 
 ### Q62
+
 ### C/C++ 编译和链接过程详解
 
 1. C 语言编译器驱动程序在编译过程中会调用：（1）语言预处理器 cpp（2）编译器 cc1（3）汇编器 as（4）链接器 ld。
@@ -2681,13 +2706,14 @@ x86-64 Linux/Unix：Executable and Linkable Format，ELF 格式
 
 ---
 
-
 ### Q63
+
 ### C/C++ open fopen freopen
 
 参考1：https://www.cnblogs.com/fnlingnzb-learner/p/7040726.html
 
 ### Q64
+
 ### C 和 C++ 静态变量何时初始化
 
 1. C 语言中，在代码执行之前初始化，即编译期初始化。
@@ -2695,6 +2721,7 @@ x86-64 Linux/Unix：Executable and Linkable Format，ELF 格式
 2. C++ 语言中，all static data(class member) is initialized to zero when the first object is created, if no other initialization is present.
 
 ### Q65
+
 ### 从源码到可执行文件的过程
 
 1. **预编译(预处理器)，g++ sample.cpp -E sample.i**
@@ -2732,6 +2759,7 @@ x86-64 Linux/Unix：Executable and Linkable Format，ELF 格式
 ---> 动态链接：把模块拆分成各个独立的部分，在程序运行时才将它们链接在一起形成完整的程序。评价：没有副本，共享库，更新方便，运行速度损耗。
 
 ### Q66
+
 ### C++ 数组名与退化的数组指针
 
 1. **\&数组名：对数组名取地址，其类型为整个数组的类型，但是地址为数组首元素地址的值。**
@@ -2739,35 +2767,37 @@ x86-64 Linux/Unix：Executable and Linkable Format，ELF 格式
 而单纯的数组名总是第一维元素的指针类型。
 
 - 一维例子：
-```cpp
-char a[3];
-char (*p)[3] = &a;
-char *p2 = a;
-printf("p=%lu , p2=%lu\n", p, p2);
-// 结果为：p=140733163459877 , p2=140733163459877
-```
+  
+  ```cpp
+  char a[3];
+  char (*p)[3] = &a;
+  char *p2 = a;
+  printf("p=%lu , p2=%lu\n", p, p2);
+  // 结果为：p=140733163459877 , p2=140733163459877
+  ```
 
 - 二维例子：
-```cpp
-char a[3][2];
-char (*p)[3][2] = &a;
-char (*p2)[2] = a; // 数组名是第一维元素 char[2][1] 的指针类型
-char (*p3)[2] = &a[0]; // a[0] 是一个 char[2] 的数组名，对它取地址将获得整个数组类型
-char *p4 = a[0];
-```
+  
+  ```cpp
+  char a[3][2];
+  char (*p)[3][2] = &a;
+  char (*p2)[2] = a; // 数组名是第一维元素 char[2][1] 的指针类型
+  char (*p3)[2] = &a[0]; // a[0] 是一个 char[2] 的数组名，对它取地址将获得整个数组类型
+  char *p4 = a[0];
+  ```
 
 - 三维例子：
-```cpp
-char a[3][2][1];
-char (*p)[3][2][1] = &a;
-char (*p)[2][1] = a;
-char (*p)[2][1] = &a[0];
-char (*p)[1] = a[0]; // a[0] 作为数组名本身的类型时第一维元素类型
-char (*p)[1] = &a[0][0];
-char *p = a[0][0];
-char *p = &a[0][0][0];
-```
-
+  
+  ```cpp
+  char a[3][2][1];
+  char (*p)[3][2][1] = &a;
+  char (*p)[2][1] = a;
+  char (*p)[2][1] = &a[0];
+  char (*p)[1] = a[0]; // a[0] 作为数组名本身的类型时第一维元素类型
+  char (*p)[1] = &a[0][0];
+  char *p = a[0][0];
+  char *p = &a[0][0][0];
+  ```
 2. **数组名作为函数形参会退化为指针。**
 
 如果在函数中 sizeof(数组名形参) = sizeof(数组首元素指针) = 8 (64位机)
@@ -2781,6 +2811,7 @@ int a[3][2] 等价于 *(*(a + 3) + 2)
 ```
 
 ### Q67
+
 ### fwrite 和 fread 缓冲区问题
 
 参考1：https://blog.csdn.net/J_H_C/article/details/83868262
@@ -2792,7 +2823,7 @@ fwrite() 函数会先将数据写入内存中的缓冲区，等程序结束后�
 1. 程序正常结束。作为 main 返回工作的一部分，将清空所有输出缓冲区。（如果程序异常终止，则不会刷新缓冲区！）
 
 2. 在一些不确定的时候，缓冲区可能已经满了，在这种情况下，缓冲区将会
-在写下一个值之前刷新。
+   在写下一个值之前刷新。
 
 3. 可以使用操作符endl、flush和ends来显示的刷新缓冲区。这三个都是IO库中的操作符，endl能完成换行和刷新缓冲区的工作。flush只完成刷新缓冲区的工作。而ends会向缓冲区插入一个空字符，然后刷新缓冲区。例子如下：
 
@@ -2806,18 +2837,18 @@ using namespace std;
 
 int main()
 {
-	cout << "hi" << endl;
-	cout << "hi" << flush;
-	cout << "hi" << ends;
+    cout << "hi" << endl;
+    cout << "hi" << flush;
+    cout << "hi" << ends;
   cout << "hi"; //当系统比较空闲的时候，会查看缓冲区的内容，如果发现有新的内容，系统就会将缓冲区的内容输出出来
 
-	system("pause");
-	return 0;
+    system("pause");
+    return 0;
 }
 ```
 
 4. 在每次输出操作执行完后，用 unitbuf 操作符设置流的内部状态，从而
-清空缓冲区。
+   清空缓冲区。
 
 ```cpp
 cout << unitbuf;      //所有的输出操作后都会立即刷新缓冲区
@@ -2825,11 +2856,12 @@ cout << nounitbuf;    //回到正常的缓冲方式
 ```
 
 5. 可将输出流与输入流关联（tie 函数）起来。在这种情况下，在读输入流时将
-刷新其关联的输出缓冲区。
+   刷新其关联的输出缓冲区。
 
 Plus 6. 当系统比较空闲的时候，会查看缓冲区的内容，如果发现有新的内容，系统就会将缓冲区的内容输出出来
 
 ### Q67.5
+
 ### SGI STL construct 和 destroy
 
 在说内存池之前，介绍构造和析构基本工具 construct() 和 destroy()
@@ -2874,6 +2906,7 @@ inline void destroy(wchar_t *, wchar_t *){}
 ```
 
 ### Q68
+
 ### SGI STL 内存池源码剖析
 
 #### 1. 内存池总体结构
@@ -3027,8 +3060,6 @@ void* __malloc_alloc_template<inst>::oom_realloc(void *p, size_t n){
     if(result) return (result);
   }
 }
-
-
 ```
 
 #### 3. 第二级配置器 __default_alloc_template
@@ -3036,13 +3067,16 @@ void* __malloc_alloc_template<inst>::oom_realloc(void *p, size_t n){
 小块内存带来的不仅仅是内存碎片的问题，还有配置时额外的负担（overhead）
 
 free-list 的节点结构
+
 ```cpp
 union obj{
   union obj *free_list_link;
   char client_data[1];
 }
 ```
+
 第二级分配器部分实现：
+
 ```cpp
 enum {__ALIGN = 8}; // 小块内存对齐
 enum {__MAX_BYTES = 128}; // 小块内存上界
@@ -3224,6 +3258,7 @@ chunk_alloc(size_t size, int &nobjs){
 ```
 
 ### Q69
+
 ### volatile 修饰符
 
 参考1：https://www.cnblogs.com/god-of-death/p/7852394.html
@@ -3237,6 +3272,7 @@ chunk_alloc(size_t size, int &nobjs){
 Plus：Volatile变量与非Volatile变量的顺序，编译器不保证顺序，可能会进行乱序优化。这里可以考虑使用锁机制来保证顺序。
 
 ### Q70
+
 ### 强类型、弱类型语言
 
 弱类型语言允许将一块内存看做多种类型。比如直接将整型变量与字符变量相加。C and C++ 是静态语言，也是弱类型语言；Perl and PHP 是动态语言，但也是弱类型语言。
@@ -3246,18 +3282,19 @@ Plus：Volatile变量与非Volatile变量的顺序，编译器不保证顺序，
 使用哪种语言还是要按需而定。编写简单小应用，使用弱类型语言可节省很多代码量，有更高的开发效率。而对于构建大型项目，使用强类型语言可能会比使用弱类型更加规范可靠。
 
 ### Q71
+
 ### C++ operator ->, ->\*, ., .\*
 
 See [stackoverflow](https://stackoverflow.com/questions/8777845/overloading-member-access-operators-c)
 
 ### Q72
+
 ### STL Preview
 
 ![](imgs/STL_preview.png)
 
-
-
 ### Q72
+
 ### C/C++ 函数压栈原理
 
 流程：main() --调用--> fa() --调用--> fb()
@@ -3267,6 +3304,7 @@ See [stackoverflow](https://stackoverflow.com/questions/8777845/overloading-memb
 (栈底) 操作系统运行状态，main函数返回地址，main函数参数，main函数运行状态，fa函数返回地址，fa函数参数，fa中定义的变量...，fa函数运行状态，fb函数返回地址，fb函数参数，fb中定义的变量
 
 ### Q73
+
 ### unique_ptr 的实现
 
 参考1：https://blog.csdn.net/liushengxi_root/article/details/80672901
