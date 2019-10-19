@@ -1,5 +1,7 @@
 ## TCP/IP 详解 卷一 习题自解
 
+电子书Link: [TCP/IP Illustrated, Volume 1 The Protocols W. Richard Stevens]([https://www.isi.edu/~hussain/TEACH/Spring2014/notes/Steven00a.pdf](https://www.isi.edu/~hussain/TEACH/Spring2014/notes/Steven00a.pdf)
+
 #### 第一章：概述
 
 **1.1 请计算最多有多少个A类、B类和C类网络号。**
@@ -434,16 +436,40 @@ Malkin的想法是定义新的IP选项，名为 IP traceroute option。在发送
 
 缺点：这种功能需要被安装在路由器中。解决方法是让新版的IP协议支持这种功能。
 
-
+---
 
 #### 第九章：IP 选路
+
+**9.1 Why do you think both types of ICMP redirects network and host exist?**
+
+（在RFC792第一次定义ICMP标准时，子网划分并没有被使用。）从空间利用角度上讲，使用网络重定向比使用N个主机重定向更节约路由表的空间。
+
+**9.2 In the routing table for svr4 shown at the beginnig of Section 9.2, is a specific route to the host slip(140.252.13.65) necessary? What would change if this entry were removed from the routing table?**
+
+这一项并不是必须的，但是如果把它删除了，那么之后svr4发送给slip的报文将被发送给默认路由sun，sun又转发给bsdi。因为sun把数据报从与接收到数据报相同的接口转发出去，它会给svr4回复一个ICMP重定向报文，在svr4的路由表中又重新添加回删掉的这一项。
+
+**9.3 Consider a cable with both 4.2BSD hosts and 4.3BSD hosts. Assume the network ID is 140.1. The 4.2BSD hosts only recognize a host ID of all zero bits as the broadcast address (140.1.0.0), while the 4.3BSD hosts normally send a boradcast using a host ID of all one bits(140.1.255.255). Also, the 4.2BSD hosts by default will try to forward incoming datagrams, even if they have only a single interface.**
+
+当4.2BSD主机收到目标为140.1.255.255的数据报时，它发现目的地与自己同处一个子网，于是广播ARP请求，当然没有回应。当多个4.2BSD主机在几乎同一时刻收到这种报文并广播ARP请求会造成网络阻塞。
+
+**9.4 Continue the previous exercise, assuming someone corrects this problem by adding an entry to the ARP cache on one system on the 140.1 subnet (using the arp command) saying that the IP address 140.1.255.255 has a correspongindg Ethernet address of all one bits(the Ethernet boradcast). Describe what happens now.**
+
+这会导致每台4.2BSD主机持续不断地发送以太网广播报文（链式效应），造成网络崩溃。
+
+**9.5 Examine your system's routing table and describe each entry.**
+
+```
+
+```
+
+
 
 ---
 
 #### 第十章：动态选路协议
 
+
+
 ---
 
 #### 第十一章：UDP：用户数据报协议
-
-
