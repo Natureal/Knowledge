@@ -459,16 +459,33 @@ Malkin的想法是定义新的IP选项，名为 IP traceroute option。在发送
 **9.5 Examine your system's routing table and describe each entry.**
 
 ```
-
+naturain@naturain:/etc$ route
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+default         _gateway        0.0.0.0         UG    600    0        0 wlp2s0
+link-local      0.0.0.0         255.255.0.0     U     1000   0        0 docker0
+172.17.0.0      0.0.0.0         255.255.0.0     U     0      0        0 docker0
+172.20.52.0     0.0.0.0         255.255.252.0   U     600    0        0 wlp2s0
+naturain@naturain:/etc$ route -n
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         172.20.55.254   0.0.0.0         UG    600    0        0 wlp2s0
+169.254.0.0     0.0.0.0         255.255.0.0     U     1000   0        0 docker0
+172.17.0.0      0.0.0.0         255.255.0.0     U     0      0        0 docker0
+172.20.52.0     0.0.0.0         255.255.252.0   U     600    0        0 wlp2s0
 ```
 
+第二条和第三条为docker创建的路由。
 
+重点关注wlp2s0网卡上的两条路由：
+
+第一条路由带有G标识，为间接路由，指向网关的IP(172.20.55.254)。
+
+第四条路由实质上指的是该主机所在子网，172.20.52.0表示了该子网，Gateway字段为0.0.0.0，表示发往该网络的数据报不需要路由，这是显然的。（补充：在发送到同个子网其他主机前需要利用ARP确定其物理地址。）
 
 ---
 
 #### 第十章：动态选路协议
-
-
 
 ---
 
