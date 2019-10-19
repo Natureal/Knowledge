@@ -490,7 +490,7 @@ Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
 
 **10.1 In Figure 10.9 which of the routes came to gateway from the router kpno?**
 
-![](imgs/TCP_IP_10-9.png =600x)
+![](imgs/TCP_IP_10-9.png)
 
 下图是路由连接情况的局部图：
 
