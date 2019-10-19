@@ -487,6 +487,39 @@ Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
 
 #### 第十章：动态选路协议
 
+
+**10.1 In Figure 10.9 which of the routes came to gateway from the router kpno?**
+
+![](imgs/TCP_IP_10-9.png =600x)
+
+下图是路由连接情况的局部图：
+
+![](imgs/TCP_IP_10-7.png)
+
+可以看到gateway直接和140.252.101.0和140.252.104.0网路连接。所以除了这两个路由，其他13个路由都是从kpno到gateway的。
+
+**10.2 Assume a router has 30 routes to advertise using RIP, requiring one datagram with 25 routes and another with the remaining 5. What happens if once an hour the first datagram with 25 routes is lost?**
+
+根据RIP协议，路由器会定期（30秒）广播自己的路由表进行更新，如果这次的丢失了，下个周期仍然会进行广播，因此问题不大。（一般来说，路由如果3分钟都没有更新才会失效。）
+
+**10.3 The OSPF packet format has a checksum field, but the RIP packet does not. Why?**
+
+RIP运行在UDP上，而UDP本身就提供了包含首部和数据部分的校验和。OSPF运行在IP上，IP的校验和只包含其首部，因此OSPF必须拥有自己校验和。
+
+**10.4 What effect does load balancing, as done by OSPF, have on a transport layer?**
+
+负载均衡增加了分组失序的可能性，并可能会使得传输层计算RTT出错。
+
+**10.5 Read RFC 1058 for additional details on the implementation of RIP. In Figure 10.8 each router advertises only the routes that it provides, and none of the other routes that it learned about through the other router's broadcasts on the 140.252.1 network. What is this technique called?**
+
+[RFC 1058](https://www.rfc-editor.org/rfc/pdfrfc/rfc1058.txt.pdf)
+
+Simple Split Horizon: The "simple split horizon" scheme omits routes learned from one neighbor in updates sent to that neighbor.
+
+**10.6 In Section 3.4 we said there are more than 100 hosts on the 140.252.1 subnet in addition to the eight routers we show in Figure 10.7. What do these 100 hosts do with the eight broadcasts that arrive every 30 seconds (Figure 10.8)?**
+
+100个主机的设备驱动会处理这些广播报文，经过IP层和UDP层，并且最终被丢弃，因为主机不具有路由功能，UDP的520端口并不在使用。
+
 ---
 
 #### 第十一章：UDP：用户数据报协议
