@@ -51,3 +51,5 @@
 7. IPC 调用摸底 + preview 底层 eBPF
 
 8. TCP/IP 详解习题自解 **doing**
+
+9. idea: 实现一个检测从京大出发到世界其他大学IP地址的链路MTU的code
