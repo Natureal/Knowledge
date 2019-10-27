@@ -2,6 +2,8 @@
 
 电子书Link: [TCP/IP Illustrated, Volume 1 The Protocols W. Richard Stevens](https://www.isi.edu/~hussain/TEACH/Spring2014/notes/Steven00a.pdf)
 
+---
+
 #### 第一章：概述
 
 **1.1 请计算最多有多少个A类、B类和C类网络号。**
@@ -585,3 +587,126 @@ IP首部中的标识符字段相同，都是47942。
 不正确。
 
 根据11.12节，我们知道是根据目的UDP端口、源UDP端口、目的IP地址、源IP地址。
+
+---
+
+#### 第十二章：广播与多播
+
+**12.1 广播是否增加了网络通信量？**
+
+单单一个广播并不足以增加通信量，但是其增加了额外主机的处理负担。
+
+当主机错误地回应广播时（比如ICMP端口不可达报文），会增加网络通信量。
+
+Plus：路由器不会转发广播，但是网桥会，因此在桥接的网络中，广播能传播地更远。
+
+**考虑一个拥有50台主机的以太网：20台运行TCP/IP，其他30台运行其他的协议族。主机如何处理来自运行另一个协议族主机的广播？**
+
+每台主机的网卡都会收到广播，并把广播报文交给设备驱动程序，如果根据其协议字段，发现主机上没有运行相应的协议程序，则丢弃报文。
+
+**登录到一个过去从来没有用过的Unix系统，并且打算找出所有支持广播的接口的指向子网的广播地址。如何做到这点？**
+
+运行 ifconfig 命令：
+
+```
+enp0s31f6: flags=4099<UP,BROADCAST,MULTICAST>  mtu 1500
+        ether e8:6a:64:c5:2b:7c  txqueuelen 1000  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+        device interrupt 16  memory 0xee300000-ee320000
+
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+        inet6 ::1  prefixlen 128  scopeid 0x10<host>
+        loop  txqueuelen 1000  (Local Loopback)
+        RX packets 15005  bytes 9396694 (9.3 MB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 15005  bytes 9396694 (9.3 MB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+wlp2s0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 10.238.26.252  netmask 255.255.254.0  broadcast 10.238.27.255
+        inet6 fe80::5fb7:8933:bde9:e0d4  prefixlen 64  scopeid 0x20<link>
+        ether 58:a0:23:41:4d:35  txqueuelen 1000  (Ethernet)
+        RX packets 1633541  bytes 2094096535 (2.0 GB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 397938  bytes 99929727 (99.9 MB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+```
+
+根据得到的interfaces的信息，我们通过其tags可以知道enp0s31f6和wlp2s0支持广播（BROADCAST），并且wlp2s0直接给出了指向子网的广播地址：10.238.27.555。
+
+**如果我们用ping程序向一个广播地址发送一个长的分组，如 sun % ping 140.252.13.63 1472，它正常工作，但将分组的长度再增加一个字节后出现如下差错，究竟出了什么问题？**
+
+```
+sun % 140.252.13.63 1473
+PING 140.252.13.63: 1473 data bytes
+sendto: Message too long
+```
+
+伯克利派的实现并不允许广播报文被分片，这是一个规定，并没有特别的技术原因（当然想要减少广播报文分组数是一个原因啦）。当数据长度为1472时，IP数据报刚好达到了以太网的MTU=1500。
+
+
+**重做习题10.6，假定8个RIP报文是通过多播而不是广播（使用RIP版本2）。有什么变化？**
+
+取决于这100台主机的以太网接口卡对多播的支持，则多播可能被接口卡忽视，可能被设备驱动程序丢弃，也可能经过IP和UDP传上来，主机如果不支持路由功能则丢弃报文。
+
+---
+
+#### 第十三章：IGMP：Internet组管理协议
+
+---
+
+#### 第十四章：DNS域名系统
+---
+
+#### 第十五章：TFTP：简单文本传送协议
+
+---
+
+#### 第十六章：BOOTP：引导程序协议
+
+---
+
+#### 第十七章：TCP：传输控制协议
+
+---
+
+#### 第十八章：TCP连接的建立与终止
+
+---
+
+#### 第十九章：TCP的交互数据流
+
+---
+
+#### 第二十章：TCP的成块数据流
+
+---
+
+#### 第二十一章：TCP的超时与重传
+
+---
+
+#### 第二十二章：TCP的坚持定时器
+
+---
+
+#### 第二十三章：TCP的保活定时器
+
+#### 第二十四章：TCP的未来和性能
+
+#### 第二十五章：SNMP：简单网络管理协议
+
+#### 第二十六章：Telnet和Rlogin：远程登录
+
+#### 第二十七章：FTP：文件传送协议
+
+#### 第二十八章：SMTP：简单邮件传送协议
+
+#### 第二十九章：网络文件系统
+
+#### 第三十章：其他的TCP/IP应用程序
