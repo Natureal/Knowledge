@@ -92,6 +92,8 @@ Referrence：[Linux Tools Quick Tutorial](https://linuxtools-rst.readthedocs.io/
 
 14. continue 继续运行程序，可简写为c
 
+15. Google test & gprof
+
 ---
 
 
