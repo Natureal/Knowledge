@@ -123,8 +123,6 @@
 - **Random echo**: 1528 bytes, 和收到的S1/C1一致。
 
 
-
-
 ---
 
 ## ffmpeg 常用参数记录
@@ -147,6 +145,7 @@
 
 - 推流命令样例: ffmpeg -re -i sample.mp4 -vcodec copy -acodec copy -f flv "rtmp://localhost:1935/mytv"
 
+- 拉流命令样例: ffplay -i "rtmp://localhost:1935/kaishi"
 
 ---
 
@@ -286,6 +285,7 @@ type = struct {
 <summary>
 <b> ngx_rtmp_relay_target_t </b>
 </summary>
+
 ```
 type = struct {
     ngx_url_t url;
@@ -650,15 +650,21 @@ rtmp {
 
 - （1）**main**: 启动nginx，并做初始化
 
-  - ngx_**init_cycle**：cycle初始化
+  - ngx_**init_cycle**
+
+    - **<font color='blue'> 整体初始化 </font>**
 
     - ngx_rtmp_**auto_push_create_conf**
 
-    - ngx_**conf_parse**：解析配置文件nginx.conf
+    - ngx_**conf_parse**
+
+      - **<font color='blue'> 解析配置文件nginx.conf </font>**
 
       - ngx_**conf_handler**
 
-        - ngx_**rtmp_block**：发现rtmp配置
+        - **<font color='blue'> 发现rtmp配置 </font>**
+
+        - ngx_**rtmp_block**
 
           - ngx_rtmp_{core|codec|access|record|live|relay|dash|hls}_create_{main|srv|app}_conf
 
@@ -676,7 +682,7 @@ rtmp {
 
         - ngx_**rtmp_..._postconfiguration**
 
-          - 配置每个模块的next_play
+          - **<font color='blue'> 挂载每个模块的next_play函数 </font>**
 
         - ngx_**rtmp_add_{ports|addrs|...}**
 
@@ -690,7 +696,7 @@ rtmp {
 
           - （6）ngx_**worker_process_init**：做worker初始化
 
-            - 循环调用每个module的init_process函数（如果有）
+            - **<font color='blue'> 循环调用每个module的init_process函数（如果有） </font>**
 
             - ngx_**rtmp_init**_process
 
@@ -710,7 +716,9 @@ rtmp {
 
               - （9）events = **epoll_wait**(.., timer): 系统调用，检测到EPOLLIN事件
 
-              - （10）ngx_**event_accept**：accept TCP connection
+              - （10）ngx_**event_accept**：
+
+                - **<font color='blue'> 接受TCP连接请求 </font>**
 
                 - （10.1）ngx_rtmp_**init_connection**
 
@@ -738,13 +746,15 @@ rtmp {
 
                         - （18）ngx_rtmp_**amf_message_handler**
 
+                          - **<font color='blue'> 来了请求，首先解析AMF信息 </font>**
+
                           - （18.1）ngx_rtmp_**amf_read**
 
-                          - （18.2）ngx_rtmp_**cmd_connect_init**
+                          - （18.2）ngx_rtmp_**cmd_connect_init**：初始化连接
 
-                            - （18.2.1）ngx_rtmp_**notify_connect**
+                            - （18.2.1）ngx_rtmp_**notify_connect**：可能会有鉴权
 
-                              - （18.2.1.1）**<font color='red'> ngx_rtmp_cmd_connect </font>**
+                              - （18.2.1.1）**<font color='red'> ngx_rtmp_cmd_connect </font>**：建连
 
                       - （17）ngx_rtmp_**receive_message**：接收rtmp message
 
@@ -756,9 +766,42 @@ rtmp {
 
                             - （17.1.1.1）**<font color='red'>ngx_rtmp_cmd_create_stream </font>**
 
-                          - （17.1.2）**<font color='red'> ngx_rtmp_cmd_play_init </font>**
+                          - （17.1.2）**<font color='red'> ngx_rtmp_cmd_publish_init </font>**
 
-                            - **<font color='blue'> 如果出现pull拉流，进入next_play函数调用链 </font>**
+                            - **<font color='blue'> 如果出现publish推流，进入next_play函数调用链 </font>**
+
+                            - ngx_rtmp_dash_publish
+
+                            - ngx_rtmp_hls_publish
+
+                            - ngx_rtmp_log_publish：根据推流的名字注册日志
+
+                            - ngx_rtmp_notify_publish：检查auto_push
+
+                            - ngx_rtmp_exec_publish
+
+                            - ngx_rtmp_relay_publish：中继转发
+
+                            - ngx_rtmp_relay_push
+
+                              - ngx_rtmp_relay_create
+
+                                - create_publish_ctx
+
+                            - ngx_rtmp_live_publish
+
+                              - ngx_rtmp_live_join
+
+                            - ngx_rtmp_record_publish
+
+                            - ngx_rtmp_access_publish
+
+                            - ngx_rtmp_cmd_publish
+
+
+                          - （17.1.3）**<font color='red'> ngx_rtmp_cmd_play_init </font>**
+
+                            - **<font color='blue'> 如果出现play拉流，进入next_play函数调用链 </font>**
 
                             - ngx_rtmp_log_play
 
@@ -768,8 +811,6 @@ rtmp {
 
                             - ngx_rtmp_relay_play
 
-                              -
-
                             - ngx_rtmp_play_play
 
                             - ngx_rtmp_live_play
@@ -777,6 +818,11 @@ rtmp {
                               - ngx_rtmp_live_join
 
                                 - ngx_rtmp_live_get_stream
+
+                                  - **<font color='blue'> 计算流名的hash值 </font>**
+
+                                  - 根据hash在live_app_conf->streams中寻找对应的流
+
 
                             - ngx_rtmp_access_play
 
@@ -793,23 +839,11 @@ rtmp {
 
                         - （21）ngx_rtmp_**user_message_handler**
 
+                          - **<font color='blue'> ping心跳包处理 </font>**
+
                           - （22）ngx_rtmp_**reset_ping**
 
                             - （23）ngx_**add_timer**
-
-                      - （17）ngx_rtmp_**receive_message**：接收rtmp message
-
-                        - （26）ngx_rtmp_**live_av**
-
-                          - （27）ngx_rtmp_**live_start**
-
-                            - （28）ngx_rtmp_**create_stream_begin**
-
-                              - （29）ngx_rtmp_**live_set_status**
-
-                                - 在函数中: ngx_rtmp_live_ctx_t中的publishing为1
-
-                          - 广播到所有的订阅者（subscriber）
 
 
 ---
