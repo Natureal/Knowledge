@@ -732,7 +732,7 @@ http{
           - ngx_rtmp_**cmd_connect**：建连
 
   - ngx_rtmp_**receive_message**：接收rtmp message
-  **<font color='green'> [------------------------------------------------------- 开始推拉流 ---------------------------------------------------------] </font>**
+  **<font color='green'> [------------------------------------------------------- 开始推拉流 -------------------------------------------------------] </font>**
 
     - ngx_rtmp_**amf_message_handler**：
 
@@ -867,6 +867,8 @@ http{
 ---
 
 ```sequence {theme='simple'}
+
+Title: RTMP Communication Workflow
 
 participant Client
 participant Server
