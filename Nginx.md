@@ -2,57 +2,43 @@
 
 #### Message
 
-- **Message Header**
+- **Message Header**: 消息头部
 
-  - Message Type
+  - Message Type: 消息类型
 
     - **Type of Messages**
 
-      - Command Message
+      - Command Message: 控制信息
 
-        - NetConnection
+        - NetConnection: 建立连接和流
 
-          - connect
+          - connect / call / close / createStream
 
-          - call
+        - NetStream: 对流的操作
 
-          - close
-
-          - createStream
-
-        - NetStream
-
-          - play / play2
-
-          - deleteStream
-
-          - closeStream
+          - play / play2 / deleteStream / closeStream
 
           - receiveAudio / receiveVideo
 
-          - publish
+          - publish / seek / pause
 
-          - seek
-
-          - pause
-
-      - Data Message
+      - Data Message: 数据信息
 
       - Shared Object Message
 
-      - Audio Message
+      - Audio Message: 音频数据
 
-      - Video Message
+      - Video Message: 视频数据
 
       - Aggregate Message
 
-      - User Control Message Events
+      - User Control Message Events: 用户控制信息
 
         - Stream Begin/EOF/Dry/IsRecorded
 
         - SetBuffer Length
 
-        - Ping Request/Response
+        - Ping Request/Response: Ping保活信息
 
   - Payload Length
 
@@ -60,22 +46,22 @@
 
   - Stream ID
 
-- **Message Payload**
+- **Message Payload**: 有效负载
 
 
 #### Chunk
 
-- **Chunk Header**
+- **Chunk Header**: 块头部
 
-  - **Basic Header**: 1-3 byte(s), encodes the chunk stream ID and chunk type. Chunk type determines the format of the encoded message header. (fmt field)
+  - **Basic Header**: 1-3 byte(s), encodes the chunk stream ID and chunk type. Chunk type determines the format of the encoded message header. (fmt field) 包含了流ID和块类型，块类型决定了消息头部的格式。
 
     - fmt: identifies one of four format used by the 'chunk message header'.
 
     - cs id: chunk stream id
 
-  - **Message Header**: one of four format selected by the 'fmt' field.
+  - **Message Header**: one of four format selected by the 'fmt' field. 头部格式由块类型决定
 
-    - **Type 0**: 11 bytes, MUST be used at the start of a chunk stream and whenever the stream timestamp goes backward.
+    - **Type 0**: 11 bytes, MUST be used at the start of a chunk stream and whenever the stream timestamp goes backward. 必须用来块流的开始阶段。
 
       - timestamp + message length + message type id + message stream id
 
@@ -87,19 +73,19 @@
 
   - **Extended Timestamp**: Used to encode timestamps or timestamp deltas that are greater than 16777215(0xFFFFFF)
 
-- **Chunk Data**
+- **Chunk Data**: 块数据
 
-#### Protocol Control Messages
+#### Protocol Control Messages: 协议控制信息
 
-- Set Chunk Size: 32 bits, 31 bits for chunk size.
+- Set Chunk Size: 32 bits, 31 bits for chunk size. : 设置块大小
 
-- Abort Message: 32 bits for chunk stream id.
+- Abort Message: 32 bits for chunk stream id. : 中止信息
 
-- Acknowledgement
+- Acknowledgement : 确认
 
-- Window Acknowledgement Size
+- Window Acknowledgement Size : 窗口大小确认
 
-- Set Peer Bandwidth
+- Set Peer Bandwidth : 设置带宽
 
 
 #### C0 and S0: 1 byte
@@ -177,11 +163,11 @@
 
 ---
 
-## Nginx with RTMP 核心数据结构
+## 开源 Nginx with RTMP 核心数据结构
 
 <details>
 <summary>
-<b> ngx_rtmp_core_main_conf_t </b>
+<b> ngx_rtmp_core_main_conf_t : rtmp core 模块主配置 </b>
 </summary>
 
 ```cpp
@@ -199,7 +185,7 @@ type = struct {
 
 <details>
 <summary>
-<b> ngx_rtmp_core_src_conf_t </b>
+<b> ngx_rtmp_core_src_conf_t : rtmp core 模块服务器配置 </b>
 </summary>
 
 ```cpp
@@ -230,7 +216,7 @@ type = struct ngx_rtmp_core_srv_conf_s {
 
 <details>
 <summary>
-<b> ngx_rtmp_core_app_conf_t </b>
+<b> ngx_rtmp_core_app_conf_t : rtmp core 模块应用配置</b>
 </summary>
 
 ```cpp
@@ -245,7 +231,7 @@ type = struct {
 
 <details>
 <summary>
-<b> ngx_rtmp_relay_app_conf_t </b>
+<b> ngx_rtmp_relay_app_conf_t : rtmp relay 模块应用配置</b>
 </summary>
 
 ```cpp
@@ -598,7 +584,7 @@ http{
 
   - ngx_**daemon**: 守护进程化
 
-    - fork: 之后跟踪子进程，也就是守护进程
+    - fork: 父进程退出，子进程成为守护进程
 
   - ngx_**master_process_cycle**: master进程主逻辑
 
@@ -606,7 +592,7 @@ http{
 
       - ngx_**spawn_process**:
 
-        - fork: 之后跟踪父进程，也就是master进程
+        - fork: 产生worker进程
 
     - sig**suspend**: master挂机，等待信号
 
@@ -633,218 +619,318 @@ http{
 -->
 
 
-## Nginx with RTMP module 详细函调路径
+## 开源 Nginx with RTMP module 与 Tengine-live 详细函调路径
 
-基于[arut/nginx-rtmp-module](https://github.com/arut/nginx-rtmp-module)，rtmp配置如下：
+**工具: cgdb**
 
-```
-rtmp {
-    server {
-        listen 1935;
-        application mytv {
-            # enable live streaming
-            live on;
-        }
-}
-```
+- **main**: 启动nginx，并做初始化
 
-- （1）**main**: 启动nginx，并做初始化
+  - ngx_**init_cycle**：
+  **<font color='green'> [------------------------------------------------------ 整体初始化 -------------------------------------------------------------------]</font>**
 
-  - ngx_**init_cycle**
-
-    - **<font color='blue'> 整体初始化 </font>**
-
-    - ngx_rtmp_**auto_push_create_conf**
-
-    - ngx_**conf_parse**
-
-      - **<font color='blue'> 解析配置文件nginx.conf </font>**
+    - ngx_**conf_parse**：
+    **<font color='green'> [---------------------------------- 解析配置文件nginx\*.conf ----------------------------------------] </font>**
 
       - ngx_**conf_handler**
-
-        - **<font color='blue'> 发现rtmp配置 </font>**
+**<font color='green'> [--------------------- 发现rtmp配置，初始化其所有子模块 --------------------------] </font>**
 
         - ngx_**rtmp_block**
 
-          - ngx_rtmp_{core|codec|access|record|live|relay|dash|hls}_create_{main|srv|app}_conf
+          - ngx_rtmp_{core|access|relay|...}\_create\_{main|srv|app}_conf
 
         - ngx_**rtmp_core_server**
 
-          - _create_conf .....
+          - ... \_create_..._conf .....
 
         - ngx_**rtmp_core_listen**
 
         - ngx_**rtmp_core_application**
 
-          - _create_conf .....
+          - ... \_create_..._conf .....
 
         - ngx_**rtmp_{core|codec|...}_merge**_{srv|app|...}_conf
 
+        - ngx_**rtmp_relay_push_pull**：解析转发逻辑
+
         - ngx_**rtmp_..._postconfiguration**
 
-          - **<font color='blue'> 挂载每个模块的next_play函数 </font>**
+          - <font color='green'> 挂载每个模块的next_play函数 </font>
 
         - ngx_**rtmp_add_{ports|addrs|...}**
 
-  - （2）ngx_**master_process**_cycle: master进程的主逻辑循环
+  - ngx_**master_process**_cycle: master进程的主逻辑循环
 
-    - （3）ngx_**start_worker**_processes: 启动worker进程
+    - ngx_**start_worker**_processes: 启动worker进程
 
-      - （4）ngx_**spawn_process**: master进程fork出worker进程的入口
+      - ngx_**spawn_process**:
+      **<font color=green> [-------------------------------------------------- fork出worker进程 ------------------------------------------------------] </font>**
 
-        - （5）ngx_**worker_process**_cycle: worker进程的主逻辑循环
+        - ngx_**worker_process_cycle**: worker进程的主逻辑循环
 
-          - （6）ngx_**worker_process_init**：做worker初始化
+          - ngx_**worker_process_init**：给worker初做始化
 
-            - **<font color='blue'> 循环调用每个module的init_process函数（如果有） </font>**
+            - <font color='green'> 循环调用每个module的init_process函数（如果有） </font>
 
-            - ngx_**rtmp_init**_process
+             - ngx_rtmp_**init_process**
 
-            - ngx_**rtmp_relay_init**_process
+             - ngx_rtmp_**{relay|exec|auto_push|stat}_init_process**
 
-            - ngx_**rtmp_exec_init**_process
+          - ngx_**process_events_and_timers**: worker进程的事件循环入口
 
-            - ngx_**rtmp_auto_push_init**_process
+            - ngx_**epoll**_process_events: worker进程的事件循环
 
-            - ngx_**rtmp_stat_init**_process
+              - **epoll_wait**(.., timer)
+              **<font color=green> [------------------------------------ EPOLL事件循环 -----------------------------------] </font>**
 
-            - ....
+              - ngx_**event_accept**：接受TCP连接
 
-          - （7）ngx_**process_events_and_timers**: worker进程的事件循环入口
+                - **<font color='green'> [------------------------------ RTMP 握手 ------------------------------]</font>**
 
-            - （8）ngx_**epoll**_process_events: worker进程的事件循环
+                - ngx_rtmp_**init_connection**
 
-              - （9）events = **epoll_wait**(.., timer): 系统调用，检测到EPOLLIN事件
+                  - ngx_rtmp_**init_session**
 
-              - （10）ngx_**event_accept**：
+                    - ngx_rtmp_**set_chunk_size**
 
-                - **<font color='blue'> 接受TCP连接请求 </font>**
+                  - ngx_rtmp_**handshake**
 
-                - （10.1）ngx_rtmp_**init_connection**
+                    - ngx_rtmp_**handshake_recv**
 
-                  - （10.1.1）ngx_rtmp_**init_session**
+              - ngx_rtmp_**handshake_recv**：rtmp握手流程1, recv=1537
 
-                    - （10.1.1.1）ngx_rtmp_**set_chunk_size**
+                - ngx_rtmp_**handshake_send**：回送握手，send=1537
 
-                  - （10.1.2）ngx_rtmp_**handshake**
+              - ngx_rtmp_**handshake_recv**：rtmp握手流程2, recv=1536
 
-                    - （10.1.2.1）ngx_rtmp_**handshake_recv**
+                - ngx_rtmp_**handshake_done**：握手完成
 
-              - （11）ngx_rtmp_**handshake_recv**：rtmp握手流程1, recv=1537
+                  - ngx_rtmp_**cycle**：**<font color=green> [------------ RTMP状态自动机 --------------] </font>**
 
-                - （12）ngx_rtmp_**handshake_send**：回送握手，send=1537
+                    - ngx_rtmp_**recv**：
 
-              - （11）ngx_rtmp_**handshake_recv**：rtmp握手流程2, recv=1536
+> ### 以下对ngx_rtmp_recv详细展开
 
-                - （14）ngx_rtmp_**handshake_done**
+- ngx_rtmp_**recv**：
 
-                  - （15）ngx_rtmp_**cycle**：
+  - ngx_rtmp_**receive_message**：接收rtmp message
+  **<font color='green'> [-------------------------------------------- 初始化 RTMP Connection ----------------------------------------------] </font>**
 
-                    - （16）ngx_rtmp_**recv**：接受信息
+    - ngx_rtmp_**amf_message_handler**
 
-                      - （17）ngx_rtmp_**receive_message**：接收rtmp message
+      - ngx_rtmp_**amf_read**
 
-                        - （18）ngx_rtmp_**amf_message_handler**
+      - ngx_rtmp_**cmd_connect_init**：初始化连接
 
-                          - **<font color='blue'> 来了请求，首先解析AMF信息 </font>**
+        - **<font color='red'> Tengine-live做定制的域名解析 </font>**
 
-                          - （18.1）ngx_rtmp_**amf_read**
+          - <font color='red'> 解析rtmp_connect_t中的app字段，检查app是否带参数，形如[app]/name?arg=args </font>
 
-                          - （18.2）ngx_rtmp_**cmd_connect_init**：初始化连接
+          - <font color='red'> 解析四段式地址，URL: rtmp://ip/domain/app/stream </font>
 
-                            - （18.2.1）ngx_rtmp_**notify_connect**：可能会有鉴权
+        - ngx_rtmp_**notify_connect**：可能会有鉴权
 
-                              - （18.2.1.1）**<font color='red'> ngx_rtmp_cmd_connect </font>**：建连
+          - ngx_rtmp_**cmd_connect**：建连
 
-                      - （17）ngx_rtmp_**receive_message**：接收rtmp message
+  - ngx_rtmp_**receive_message**：接收rtmp message
+  **<font color='green'> [------------------------------------------------------- 开始推拉流 ---------------------------------------------------------] </font>**
 
-                        - （17.1）ngx_rtmp_**amf_message_handler**：
+    - ngx_rtmp_**amf_message_handler**：
 
-                          - **<font color='blue'> 由这个handler可以触发很多种事件</font>**
+      - <font color='red'> ngx_rtmp_cmd_publish_init </font>
 
-                          - （17.1.1）ngx_rtmp_cmd_**create_stream_init**
+        - <font color='red'> ngx_rtmp_cmd_fcpublish </font>
 
-                            - （17.1.1.1）**<font color='red'>ngx_rtmp_cmd_create_stream </font>**
+      - ngx_rtmp_cmd_**create_stream_init**：首先创建流
 
-                          - （17.1.2）**<font color='red'> ngx_rtmp_cmd_publish_init </font>**
+        - <font color='red'> ngx_rtmp_ts_live_create_stream </font>
 
-                            - **<font color='blue'> 如果出现publish推流，进入next_play函数调用链 </font>**
+        - ngx_rtmp_**cmd_create_stream**
 
-                            - ngx_rtmp_dash_publish
+      - ngx_rtmp_**cmd_publish_init**：
+      **<font color='green'> [--------------------- 若为publish推流，进入next_publish函数调用链 ---------------------] </font>**
 
-                            - ngx_rtmp_hls_publish
+        - <font color=red> ngx_rtmp_<b>buffer_switch_publish</b>: 上下行链路选择 </font>
 
-                            - ngx_rtmp_log_publish：根据推流的名字注册日志
+        - ngx_rtmp_**dash_publish**: 判断dash推流
 
-                            - ngx_rtmp_notify_publish：检查auto_push
+        - ngx_rtmp_**hls_publish**: 判断hls推流
 
-                            - ngx_rtmp_exec_publish
+        - ngx_rtmp_**log_publish**：根据推流名注册日志
 
-                            - ngx_rtmp_relay_publish：中继转发
+        - ngx_rtmp_**notify_publish**：检查auto_push
 
-                            - ngx_rtmp_relay_push
+          - <font color='red'> ngx_rtmp_<b>notify_send_remote_auth_publish</b> </font>
 
-                              - ngx_rtmp_relay_create
+        - ngx_rtmp_**exec_publish**
 
-                                - create_publish_ctx
+        - <font color=red> ngx_rtmp_<b>ts_live_publish </b> </font>
 
-                            - ngx_rtmp_live_publish
+        - <font color=red> ngx_rtmp_<b>flv_live_publish </b> </font>
 
-                              - ngx_rtmp_live_join
+        - <font color=red> ngx_rtmp_<b>combine_publish </b> </font>
 
-                            - ngx_rtmp_record_publish
+        - ngx_rtmp_**relay_publish**：中继转发
 
-                            - ngx_rtmp_access_publish
+          - ngx_rtmp_**relay_push**
 
-                            - ngx_rtmp_cmd_publish
+            - ngx_rtmp_**relay_create**
 
+              - **create_play_ctx**：
 
-                          - （17.1.3）**<font color='red'> ngx_rtmp_cmd_play_init </font>**
+                - <font color=green> 本质为create_remote_ctx，与远端建连，远端play本地 </font>
 
-                            - **<font color='blue'> 如果出现play拉流，进入next_play函数调用链 </font>**
+                - ngx_rtmp_**relay_create_connection**
 
-                            - ngx_rtmp_log_play
+                    - ngx_rtmp_**init_session**
 
-                            - ngx_rtmp_notify_play
+                    - ngx_rtmp_**client_handshake**
 
-                            - ngx_rtmp_exec_play
+              - **create_publish_ctx**：
 
-                            - ngx_rtmp_relay_play
+                - <font color=green> 本质为create_local_ctx，本地publish到远端 </font>
 
-                            - ngx_rtmp_play_play
+                - 在本地的relay_ctx中注册session，配置push_evt
 
-                            - ngx_rtmp_live_play
+        - ngx_rtmp_**live_publish**
 
-                              - ngx_rtmp_live_join
+          - ngx_rtmp_**live_join**: 注册为publisher
 
-                                - ngx_rtmp_live_get_stream
+        - ngx_rtmp_**record_publish**
 
-                                  - **<font color='blue'> 计算流名的hash值 </font>**
+        - ngx_rtmp_**access_publish**
 
-                                  - 根据hash在live_app_conf->streams中寻找对应的流
+        - ngx_rtmp_**cmd_publish**
 
+      - ngx_rtmp_**cmd_play_init**：
+      **<font color='green'> [-------------------------- 若为play推流，进入next_play函数调用链 --------------------------] </font>**
 
-                            - ngx_rtmp_access_play
+        - ngx_rtmp_**log_play**
 
-                            - ngx_rtmp_cmd_play
+        - ngx_rtmp_**notify_play**
 
-                              - 调用链的终点，直接返回OK
+        - ngx_rtmp_**exec_play**
 
+        - ngx_rtmp_**relay_play**
 
-                      - （17）ngx_rtmp_**receive_message**：接收rtmp message
+          - ngx_rtmp_**relay_pull**
 
-                          - （20）ngx_rtmp_**protocol_message_handler**
+            - ngx_rtmp_**relay_create**
 
-                      - （17）ngx_rtmp_**receive_message**：接收rtmp message
+              - **create_play_ctx**
 
-                        - （21）ngx_rtmp_**user_message_handler**
+                - <font color=green> 本质为create_local_ctx </font>
 
-                          - **<font color='blue'> ping心跳包处理 </font>**
+              - **create_publish_ctx**
 
-                          - （22）ngx_rtmp_**reset_ping**
+                - <font color=green> 本质为create_remote_ctx，与远端建连 </font>
 
-                            - （23）ngx_**add_timer**
+        - ngx_rtmp_**play_play**
 
+        - ngx_rtmp_**live_play**
+
+          - ngx_rtmp_**live_join**
+
+            - ngx_rtmp_**live_get_stream**
+
+              - <font color='green'> 计算流名的hash值 </font>
+
+              - 根据hash在live_app_conf->streams中寻找对应的流
+
+        - ngx_rtmp_**access_play**
+
+        - ngx_rtmp_**cmd_play**
+
+          - 调用链的终点，直接返回OK
+
+
+  - ngx_rtmp_**receive_message**：接收rtmp message
+  **<font color='green'> [------------------------------------ 处理控制信息 -------------------------------------] </font>**
+
+
+      - ngx_rtmp_**protocol_message_handler**
+
+        - ngx_rtmp_**set_chunk_size**
+
+
+
+  - ngx_rtmp_**receive_message**：接收rtmp message
+  **<font color='green'> [---------------- 处理用户信息 User Control Message Events --------------] </font>**
+
+    - ngx_rtmp_**user_message_handler**
+
+      - <font color='green'> ping心跳包处理 </font>
+
+      - ngx_rtmp_**reset_ping**
+
+        - ngx_**add_timer**
+
+---
+
+```sequence {theme='simple'}
+
+participant Client
+participant Server
+
+
+Note over Client,Server : Application Connect
+
+Client -->> Server : Command Message (connect)
+
+Server -->> Client : Window Acknowledgement Size
+
+Server -->> Client : Set Peer Bandwidth
+
+Client -->> Server : Window Acknowledgement Size
+
+Server -->> Client : User Control Message (StreamBegin)
+
+Server -->> Client : Command Message (result, connect response)
+
+Note over Client,Server : Create Stream
+
+Client -->> Server : Command Message (createStream)
+
+Server -->> Client : Command Message (result, createStream response)
+
+Note over Client,Server : Publish (after creating stream)
+
+Client -->> Server : Command Message (Publish)
+
+Server -->> Client : User Control (StreamBegin)
+
+Client -->> Server : Data Message (Metadata)
+
+Client -->> Server : Audio Data
+
+Client -->> Server : SetChunkSize
+
+Server -->> Client : Command Message (publish result)
+
+Client -->> Server : Video Data
+
+Client -->> Server : Keep sending messages until complete....
+
+Note over Client,Server : Play (after creating stream)
+
+Client -->> Server : Command Message (Play)
+
+Server -->> Client : SetChunkSize
+
+Server -->> Client : User Control (StreamIsRecorded)
+
+Server -->> Client : User Control (StreamBegin)
+
+Server -->> Client : Command Message (onStatus-play reset)
+
+Server -->> Client : Command Message (onStatus-play start)
+
+Server -->> Client : Audio Message
+
+Server -->> Client : Video Message
+
+Server -->> Client : Keep sending messages....
+
+```
 
 ---
 
@@ -880,12 +966,3 @@ rtmp {
                 - ngx_http_**core_content_phase**
 
 ---
-
-
-```mermaid
-sequenceDiagram;
-
-A->B:aa
-
-
-```
